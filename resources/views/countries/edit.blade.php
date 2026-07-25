@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.bootstrap5')
 
 @section('title','Edit Country')
 
@@ -14,7 +14,7 @@
         <h3 class="card-title">Form Edit Country</h3>
     </div>
 
-    <form action="{{ route('countries.update',$country->id) }}" method="POST">
+    <form action="{{ route('admin.countries.update',$country->id) }}" method="POST">
 
         @csrf
         @method('PUT')

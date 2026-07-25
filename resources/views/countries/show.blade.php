@@ -1,33 +1,25 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Detail Negara</title>
-</head>
-<body>
+@extends('layouts.bootstrap5')
+@section('title',$country->country_name.' | Country Intelligence')
+@php
+    $tone=$country->risk_index>=70?'high':($country->risk_index>=40?'medium':'low');
+    $current=data_get($weather,'current',[]);
+@endphp
+@section('content_header')
+<div class="sc-page-head country-profile-head"><div><div class="profile-breadcrumb"><a href="{{ route('countries.index') }}">Countries</a><i class="fas fa-chevron-right"></i><span>Intelligence profile</span></div><span class="page-kicker">COUNTRY INTELLIGENCE PROFILE</span><h1>{{ $country->country_name }}</h1><p>{{ $country->capital ?: 'Capital unavailable' }} · {{ $country->region ?: 'Region unavailable' }} · {{ $country->country_code }}</p></div><div class="sc-actions"><form method="POST" action="{{ route('watchlists.store',$country) }}" class="d-inline">@csrf<button class="btn sc-btn sc-btn-light"><i class="fas fa-star mr-1"></i> Monitor</button></form><a href="{{ route('map.index') }}" class="btn sc-btn sc-btn-light"><i class="fas fa-map-marked-alt mr-1"></i> Unified Map</a>@can('admin')<a href="{{ route('admin.countries.edit',$country) }}" class="btn sc-btn sc-btn-primary"><i class="fas fa-pen mr-1"></i> Edit Country</a>@endcan</div></div>
+@stop
+@section('content')
+@include('partials.form-errors')
+<section class="country-hero sc-card"><div class="hero-flag">@if($country->country_code)<img src="https://flagcdn.com/w160/{{ strtolower($country->country_code) }}.png" alt="{{ $country->country_name }} flag">@else<span>{{ $country->flag ?: '🌐' }}</span>@endif</div><div class="hero-copy"><span>GLOBAL MARKET PROFILE</span><h2>{{ $country->country_name }}</h2><p>{{ $country->capital ?: 'Capital unavailable' }}, {{ $country->region ?: 'Region unavailable' }}</p></div><div class="hero-risk"><small>SUPPLY-CHAIN RISK</small><strong>{{ $country->risk_index }}</strong><em class="{{ $tone }}">{{ $country->risk_level }} Risk</em></div></section>
 
-<h1>Detail Negara</h1>
+<div class="country-kpis">
+<article><span class="blue"><i class="fas fa-users"></i></span><div><small>POPULATION</small><strong>{{ $country->population ? number_format($country->population) : '—' }}</strong><p>National market size</p></div></article>
+<article><span class="green"><i class="fas fa-chart-line"></i></span><div><small>GDP</small><strong>{{ $gdp !== '-' ? '$'.$gdp : '—' }}</strong><p>World Bank indicator</p></div></article>
+<article><span class="purple"><i class="fas fa-coins"></i></span><div><small>CURRENCY</small><strong>{{ $country->currency ?: '—' }}</strong><p>1 USD = {{ $exchangeRate !== '-' ? $exchangeRate : '—' }}</p></div></article>
+<article><span class="amber"><i class="fas fa-percentage"></i></span><div><small>INFLATION</small><strong>{{ $inflation !== '-' ? $inflation.'%' : '—' }}</strong><p>Latest available value</p></div></article>
+</div>
 
-<hr>
+<div class="row country-profile-layout"><div class="col-xl-8"><section class="sc-card profile-panel"><div class="panel-title"><div><span>NATIONAL OVERVIEW</span><h2>Economic and logistics profile</h2></div><span class="data-badge"><i class="fas fa-database"></i> Multi-source data</span></div><div class="profile-data"><div><i class="fas fa-landmark"></i><span>Capital<strong>{{ $country->capital ?: '—' }}</strong></span></div><div><i class="fas fa-globe-asia"></i><span>Region<strong>{{ $country->region ?: '—' }}</strong></span></div><div><i class="fas fa-money-bill-wave"></i><span>Currency<strong>{{ $country->currency ?: '—' }}</strong></span></div><div><i class="fas fa-map-pin"></i><span>Coordinates<strong>{{ $country->latitude !== null ? number_format((float)$country->latitude,2) : '—' }}, {{ $country->longitude !== null ? number_format((float)$country->longitude,2) : '—' }}</strong></span></div></div><div class="country-risk-detail"><div><span>Risk exposure index</span><strong>{{ $country->risk_index }}/100</strong></div><b><i class="{{ $tone }}" style="width:{{ min(100,$country->risk_index) }}%"></i></b><p>Low: 0–39 · Medium: 40–69 · High: 70–100. Review the risk analytics directory for cross-country prioritization.</p></div></section></div><div class="col-xl-4"><section class="sc-card profile-panel weather-profile"><div class="panel-title"><div><span>CAPITAL CONDITIONS</span><h2>Weather snapshot</h2></div><i class="fas fa-cloud-sun"></i></div><div class="weather-primary"><strong>{{ data_get($current,'temperature_2m','—') }}<sup>°C</sup></strong><span>{{ $country->capital ?: $country->country_name }}<small>Current observation</small></span></div><div class="weather-details"><div><i class="fas fa-tint"></i><span>Humidity<strong>{{ data_get($current,'relative_humidity_2m','—') }}%</strong></span></div><div><i class="fas fa-wind"></i><span>Wind<strong>{{ data_get($current,'wind_speed_10m','—') }} km/h</strong></span></div><div><i class="fas fa-cloud-rain"></i><span>Rain<strong>{{ data_get($current,'precipitation','—') }} mm</strong></span></div></div></section></div></div>
 
-<p><strong>Nama Negara :</strong> {{ $country->country_name }}</p>
-
-<p><strong>Kode Negara :</strong> {{ $country->country_code }}</p>
-
-<p><strong>Region :</strong> {{ $country->region }}</p>
-
-<p><strong>Mata Uang :</strong> {{ $country->currency }}</p>
-
-<p><strong>Ibukota :</strong> {{ $country->capital }}</p>
-
-<hr>
-
-<h2>🌍 Data World Bank</h2>
-
-@if($gdp)
-    <p><strong>GDP :</strong> {{ number_format($gdp,0,',','.') }} USD</p>
-@else
-    <p>GDP tidak tersedia.</p>
-@endif
-
-</body>
-</html>
+<div class="profile-footer-actions"><a href="{{ route('comparison.index') }}" class="btn sc-btn sc-btn-light"><i class="fas fa-balance-scale mr-1"></i> Compare Country</a><a href="{{ route('risk.index') }}" class="btn sc-btn sc-btn-primary"><i class="fas fa-shield-alt mr-1"></i> Open Risk Analytics</a></div>
+@stop
+@section('css')<link rel="stylesheet" href="{{ asset('css/supply-chain.css') }}"><style>.profile-breadcrumb{display:flex;gap:7px;margin-bottom:6px;color:#58738e;font-size:8px}.profile-breadcrumb a{color:#69adf4}.profile-breadcrumb i{font-size:5px;margin-top:4px}.country-hero{display:flex;align-items:center;gap:15px;padding:18px;margin-bottom:13px}.hero-flag{display:grid;place-items:center;width:78px;height:54px;overflow:hidden;border:1px solid #23425e;border-radius:10px;background:#0c2034}.hero-flag img{width:100%;height:100%;object-fit:cover}.hero-flag span{font-size:32px}.hero-copy{flex:1}.hero-copy>span,.panel-title>div>span{color:#3d92ea;font-size:8px;font-weight:850;letter-spacing:1px}.hero-copy h2{margin:2px 0!important;font-size:20px!important}.hero-copy p{margin:0;color:#7890aa;font-size:10px}.hero-risk{display:grid;grid-template-columns:auto auto;align-items:center;column-gap:9px;text-align:right}.hero-risk small{grid-column:1/3;color:#6f879d;font-size:7px}.hero-risk strong{grid-row:2/4;color:#eaf4fd;font-size:30px}.hero-risk em{padding:5px 8px;border-radius:8px;font-size:7px;font-style:normal;font-weight:850}.hero-risk em.low{color:#4ade89;background:#0d3628}.hero-risk em.medium{color:#f4c84a;background:#3a2e0c}.hero-risk em.high{color:#ff747e;background:#3d1820}.country-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:13px}.country-kpis article{display:flex;align-items:center;gap:11px;padding:14px;border:1px solid #193149;border-radius:11px;background:linear-gradient(145deg,#0d2035,#071524)}.country-kpis article>span{display:grid;place-items:center;width:42px;height:42px;flex:0 0 42px;border-radius:11px}.country-kpis .blue{color:#58aaff;background:#102f50}.country-kpis .green{color:#4ade89;background:#0d3427}.country-kpis .purple{color:#aa83ff;background:#292047}.country-kpis .amber{color:#f4c84a;background:#392e0d}.country-kpis small,.country-kpis strong,.country-kpis p{display:block;margin:0}.country-kpis small{color:#7890aa;font-size:7px;font-weight:800}.country-kpis strong{max-width:190px;overflow:hidden;color:#e4eef8;font-size:13px;text-overflow:ellipsis;white-space:nowrap}.country-kpis p{color:#607992;font-size:7px}.country-profile-layout{margin:0 -6px}.country-profile-layout>[class*=col-]{padding:0 6px}.profile-panel{min-height:290px;padding:17px;margin-bottom:13px}.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}.panel-title h2{margin:2px 0!important;font-size:14px!important}.panel-title>i{color:#5ba9f5}.data-badge{padding:6px 8px;border-radius:7px;background:#0c2942;color:#6fa7d8;font-size:7px}.profile-data{display:grid;grid-template-columns:1fr 1fr;gap:8px}.profile-data>div,.weather-details>div{display:flex;align-items:center;gap:9px;padding:11px;border:1px solid #173149;border-radius:9px;background:#081725}.profile-data i,.weather-details i{color:#55a8f7}.profile-data span,.profile-data strong,.weather-details span,.weather-details strong{display:block}.profile-data span,.weather-details span{color:#6d849b;font-size:8px}.profile-data strong,.weather-details strong{margin-top:2px;color:#dce8f4;font-size:10px}.country-risk-detail{margin-top:12px}.country-risk-detail>div{display:flex;justify-content:space-between;color:#8399ae;font-size:9px}.country-risk-detail>div strong{color:#e7f0f8}.country-risk-detail>b{display:block;height:6px;margin:7px 0;border-radius:6px;background:#183148;overflow:hidden}.country-risk-detail>b i{display:block;height:100%}.country-risk-detail p{margin:0;color:#607992;font-size:8px}.weather-primary{display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;background:#0b2137}.weather-primary>strong{color:#eaf4fd;font-size:31px}.weather-primary sup{font-size:13px}.weather-primary span,.weather-primary small{display:block}.weather-primary span{color:#9db1c4;font-size:9px}.weather-primary small{color:#5f7890;font-size:7px}.weather-details{display:grid;grid-template-columns:1fr;gap:6px;margin-top:9px}.profile-footer-actions{display:flex;justify-content:flex-end;gap:8px;padding-bottom:25px}@media(max-width:1000px){.country-kpis{grid-template-columns:1fr 1fr}}@media(max-width:600px){.country-hero{align-items:flex-start}.hero-risk{display:block}.hero-risk>*{display:block}.country-kpis,.profile-data{grid-template-columns:1fr}.profile-footer-actions .btn{flex:1}}</style>@stop

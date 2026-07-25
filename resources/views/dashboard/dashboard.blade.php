@@ -1,217 +1,117 @@
-@extends('adminlte::page')
-
-@section('title','Dashboard')
+@extends('layouts.bootstrap5')
+@section('title', 'Global Supply Chain Intelligence')
 
 @section('content_header')
-<h1>Supply Chain Dashboard</h1>
+<div class="di-header">
+    <div><span class="di-kicker">COMMAND CENTER</span><h1>Global Supply Chain Intelligence</h1><p>Real-time monitoring of country risk, logistics, markets, weather, and global news.</p></div>
+    <div class="di-header-actions"><form method="GET" action="{{ route('dashboard') }}"><i class="fas fa-search"></i><select name="country" onchange="this.form.submit()" aria-label="Select country">@foreach($countries as $item)<option value="{{ $item->country_code }}" @selected($selectedCountry?->country_code===$item->country_code)>{{ $item->country_name }}</option>@endforeach</select></form><span class="di-live"><i></i> Systems operational</span></div>
+</div>
 @stop
 
 @section('content')
-
-<div class="row">
-
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-info">
-            <div class="inner">
-                <h3>{{ $totalCountry }}</h3>
-                <p>Total Countries</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-globe"></i>
-            </div>
-        </div>
+@php
+    $selectedScore=(float)($selectedCountry?->risk_index??0);
+    $selectedLevel=$selectedScore>=70?'High':($selectedScore>=40?'Medium':'Low');
+    $current=$weather['current']??[];
+    $weatherCode=(int)($current['weather_code']??0);
+    $weatherLabel=$weatherCode>=95?'Thunderstorm':($weatherCode>=80?'Rain showers':($weatherCode>=51?'Rain':($weatherCode>=45?'Fog':($weatherCode>=1?'Partly cloudy':'Clear'))));
+    $rates=$exchange['rates']??[];
+@endphp
+<div class="di-shell pb-4">
+    <div class="di-kpi-grid">
+        <article class="di-kpi"><div><span>GLOBAL RISK INDEX</span><strong data-live-key="average_risk" data-live-decimals="1">{{ number_format($averageRisk,1) }}</strong><em class="{{ $averageRisk>=70?'high':($averageRisk>=40?'medium':'low') }}">{{ $averageRisk>=70?'High':($averageRisk>=40?'Medium':'Low') }} Risk</em></div><i class="fas fa-chart-line amber"></i><small><b class="up">●</b> Calculated from <span data-live-key="countries">{{ $totalCountry }}</span> countries</small></article>
+        <article class="di-kpi"><div><span>COUNTRIES MONITORED</span><strong data-live-key="countries">{{ number_format($totalCountry) }}</strong></div><i class="fas fa-globe-americas green"></i><small><b class="up">●</b> <span data-live-key="low_risk">{{ $lowRisk }}</span> countries classified low risk</small></article>
+        <article class="di-kpi"><div><span>ACTIVE PORTS</span><strong data-live-key="active_ports">{{ number_format($activePorts) }}</strong></div><i class="fas fa-anchor purple"></i><small><b class="up">●</b> <span data-live-key="ports">{{ number_format($totalPorts) }}</span> facilities · <span data-live-key="high_risk_ports">{{ number_format($highRiskPorts) }}</span> high risk</small></article>
+        <article class="di-kpi"><div><span>NEWS ANALYZED</span><strong data-live-key="news">{{ number_format($totalNews) }}</strong></div><i class="far fa-newspaper blue"></i><small><b class="up">●</b> <span data-live-key="news_today">{{ number_format($newsToday) }}</span> intelligence updates today</small></article>
+        <article class="di-kpi"><div><span>DATA SOURCES</span><strong>{{ count($dataSources) }}</strong></div><i class="fas fa-check-circle teal"></i><small><b class="up">●</b> Integrated intelligence feeds</small></article>
     </div>
 
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-success">
-            <div class="inner">
-                <h3>{{ $asia }}</h3>
-                <p>Asia</p>
+    <nav class="di-module-strip" aria-label="Core intelligence modules">
+        <a href="{{ route('map.index') }}"><i class="fas fa-map-marked-alt blue"></i><span><small>UNIFIED GEOSPATIAL VIEW</small><strong>Country & Port Map</strong><em>{{ number_format($totalCountry + $totalPorts) }} monitored locations</em></span><b>Open map <i class="fas fa-arrow-right"></i></b></a>
+        <a href="{{ route('shipping-routes.index') }}"><i class="fas fa-route purple"></i><span><small>MARITIME NETWORK</small><strong>Shipping Routes</strong><em>{{ number_format($activeRoutes) }} active of {{ number_format($totalRoutes) }} routes</em></span><b>View routes <i class="fas fa-arrow-right"></i></b></a>
+        <a href="{{ route('watchlists.index') }}"><i class="fas fa-star amber"></i><span><small>PRIORITY MONITORING</small><strong>Favorite Watchlist</strong><em>{{ number_format($watchlistCount) }} monitored countries</em></span><b>Review list <i class="fas fa-arrow-right"></i></b></a>
+        <a href="{{ route('comparison.index') }}"><i class="fas fa-balance-scale green"></i><span><small>DECISION SUPPORT</small><strong>Country Comparison</strong><em>Compare economy, risk, and logistics</em></span><b>Compare <i class="fas fa-arrow-right"></i></b></a>
+    </nav>
+
+    <div class="di-main-grid">
+        <div class="di-primary">
+            <div class="di-country-grid">
+                <section class="di-card di-selector">
+                    <div class="di-card-head"><div><span>COUNTRY CONTEXT</span><h2>Select country</h2></div><i class="fas fa-sliders-h"></i></div>
+                    <form method="GET" action="{{ route('dashboard') }}"><img src="https://flagcdn.com/w40/{{ strtolower($selectedCountry?->country_code??'id') }}.png" alt=""><select name="country" onchange="this.form.submit()">@foreach($countries as $item)<option value="{{ $item->country_code }}" @selected($selectedCountry?->country_code===$item->country_code)>{{ $item->country_name }}</option>@endforeach</select></form>
+                    @if($selectedCountry)<div class="di-country-preview"><img src="https://flagcdn.com/w160/{{ strtolower($selectedCountry->country_code) }}.png" alt=""><div><span>FEATURED COUNTRY</span><strong>{{ $selectedCountry->country_name }}</strong><small>{{ $selectedCountry->capital ?: 'Capital unavailable' }}</small></div></div>@endif
+                </section>
+
+                <section class="di-card di-country-profile">
+                    <div class="di-profile-head"><img src="https://flagcdn.com/w80/{{ strtolower($selectedCountry?->country_code??'id') }}.png" alt=""><div><h2>{{ $selectedCountry?->country_name }}</h2><p>{{ $selectedCountry?->region }} · {{ $selectedCountry?->country_code }}</p></div><span class="di-risk-badge {{ strtolower($selectedLevel) }}">{{ $selectedLevel }} Risk</span></div>
+                    <div class="di-profile-tabs"><a class="active" href="{{ $selectedCountry ? route('countries.show', $selectedCountry) : route('countries.index') }}">Overview</a><a href="{{ route('economy.index') }}">Economy</a><a href="{{ route('weather.index') }}">Weather</a><a href="{{ route('exchange.index') }}">Currency</a><a href="{{ route('ports.index') }}">Ports</a></div>
+                    <div class="di-profile-metrics">
+                        <div><span>GDP (NOMINAL)</span><strong>{{ $selectedCountry?->gdp ? '$'.number_format($selectedCountry->gdp/1000000000000,2).'T' : '—' }}</strong><small>Latest available</small></div>
+                        <div><span>POPULATION</span><strong>{{ $selectedCountry?->population ? number_format($selectedCountry->population/1000000,1).'M' : '—' }}</strong><small>{{ $selectedCountry?->region }}</small></div>
+                        <div><span>CURRENCY</span><strong>{{ $selectedCountry?->currency ?: '—' }}</strong><small>National currency</small></div>
+                        <div><span>WEATHER NOW</span><strong>{{ isset($current['temperature_2m'])?round($current['temperature_2m']).'°C':'—' }}</strong><small>{{ $weatherLabel }}</small></div>
+                        <div><span>MONITORED PORTS</span><strong>{{ number_format($selectedPortCount) }}</strong><small>Registered facilities</small></div>
+                    </div>
+                </section>
             </div>
-            <div class="icon">
-                <i class="fas fa-map"></i>
+
+            <div class="di-analysis-grid">
+                <section class="di-card di-risk-panel">
+                    <div class="di-card-head"><div><span>RISK ANALYSIS</span><h2>Country risk score</h2></div><a href="{{ route('risk.index') }}">Directory</a></div>
+                    <div class="di-risk-content"><div class="di-score-ring" style="--score:{{ $selectedScore }}"><div><strong>{{ number_format($selectedScore,0) }}</strong><span>{{ $selectedLevel }} Risk</span></div></div><div class="di-risk-factors"><div><span>Weather exposure</span><b><i class="blue" style="width:{{ min(100,($weatherCode>=80?75:25)) }}%"></i></b><em>{{ $weatherCode>=80?'75':'25' }}/100</em></div><div><span>Country index</span><b><i class="amber" style="width:{{ $selectedScore }}%"></i></b><em>{{ number_format($selectedScore,0) }}/100</em></div><div><span>News sentiment</span><b><i class="purple" style="width:{{ ($newsSentiments['Negative']??0)>($newsSentiments['Positive']??0)?70:35 }}%"></i></b><em>{{ $newsSentiments['Negative']??0 }} neg.</em></div><div><span>Port exposure</span><b><i class="green" style="width:{{ min(100,$selectedPortCount*4) }}%"></i></b><em>{{ $selectedPortCount }} ports</em></div></div></div>
+                    <div class="di-risk-note"><i class="fas fa-info-circle"></i><span>Risk classification combines stored country indicators and live operational context.</span></div>
+                </section>
+            </div>
+
+            <div class="di-bottom-grid">
+                <section class="di-card di-market-panel">
+                    <div class="di-card-head"><div><span>MARKET INTELLIGENCE</span><h2>Currency impact dashboard</h2></div><a href="{{ route('exchange.index') }}">All rates</a></div>
+                    <div class="di-market-cards">@foreach(['EUR'=>'Euro','IDR'=>'Rupiah','JPY'=>'Yen','CNY'=>'Yuan'] as $code=>$name)<div><span>{{ $code }} / USD</span><strong>{{ isset($rates[$code])?number_format($rates[$code],$code==='IDR'?0:4):'—' }}</strong><small>{{ $name }}</small><svg viewBox="0 0 70 22"><polyline points="0,19 10,15 20,17 30,8 40,12 50,5 60,9 70,2"/></svg></div>@endforeach</div>
+                    <div class="di-market-chart"><div class="di-chart-label"><span>REAL 30-DAY TREND</span><strong>USD / {{ $trendQuote }} · central-bank reference</strong></div>@if(count($currencyTrend) > 1)<canvas id="currencyChart"></canvas>@else<div class="di-trend-empty"><i class="fas fa-chart-line"></i> Historical rate unavailable</div>@endif</div>
+                </section>
+                <section class="di-card di-news-panel">
+                    <div class="di-card-head"><div><span>NEWS INTELLIGENCE</span><h2>Latest global signals</h2></div><a href="{{ route('news.index') }}">View all</a></div>
+                    <div class="di-news-list">@forelse($latestNews as $article)<a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer"><span class="di-news-thumb">@if($article->image_url)<img src="{{ $article->image_url }}" alt="Thumbnail {{ $article->title }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">@endif<i class="far fa-newspaper"></i></span><div><small>{{ $article->keyword ?: 'Supply chain' }} · {{ optional($article->published_at)->diffForHumans() }}</small><strong>{{ Str::limit($article->title,70) }}</strong><p>{{ Str::limit($article->description,88) }}</p></div><em class="{{ strtolower($article->sentiment) }}">{{ $article->sentiment }}</em></a>@empty<div class="di-empty">No intelligence updates available.</div>@endforelse</div>
+                </section>
             </div>
         </div>
+
+        <aside class="di-secondary">
+            <section class="di-card di-weather-panel">
+                <div class="di-card-head"><div><span>GLOBAL WEATHER MONITORING</span><h2>{{ $selectedCountry?->capital ?: $selectedCountry?->country_name }}</h2></div><a href="{{ route('weather.index') }}">Live weather</a></div>
+                <div class="di-weather-hero"><div class="di-weather-glow"></div><div class="di-weather-main"><i class="fas {{ $weatherCode>=80?'fa-cloud-showers-heavy':($weatherCode>=1?'fa-cloud-sun':'fa-sun') }}"></i><strong>{{ isset($current['temperature_2m'])?round($current['temperature_2m']):'—' }}<sup>°C</sup></strong><div><span>{{ $weatherLabel }}</span><small>Feels like {{ isset($current['apparent_temperature'])?round($current['apparent_temperature']).'°C':'—' }}</small></div></div><div class="di-weather-metrics"><div><i class="fas fa-tint"></i><span>Humidity</span><strong>{{ $current['relative_humidity_2m']??'—' }}%</strong></div><div><i class="fas fa-wind"></i><span>Wind</span><strong>{{ $current['wind_speed_10m']??'—' }} km/h</strong></div><div><i class="fas fa-cloud-rain"></i><span>Rain</span><strong>{{ $current['precipitation']??'—' }} mm</strong></div></div></div>
+            </section>
+
+            <section class="di-card di-port-panel">
+                <div class="di-card-head"><div><span>LOGISTICS NETWORK</span><h2>Port location dashboard</h2></div><a href="{{ route('ports.index') }}">All ports</a></div>
+                <div class="di-port-search"><i class="fas fa-search"></i><input id="portFilter" type="search" placeholder="Search port or country..."></div>
+                <div class="table-responsive"><table class="di-port-table"><thead><tr><th>Port</th><th>Country</th><th>Risk</th><th>Status</th></tr></thead><tbody>@foreach($latestPorts as $port)<tr data-port="{{ strtolower($port->port_name.' '.$port->country.' '.$port->city) }}"><td><strong>{{ $port->port_name }}</strong><small>{{ $port->city ?: '—' }}</small></td><td>{{ $port->country }}</td><td><span class="di-port-risk {{ strtolower($port->risk_level?:'low') }}">{{ $port->risk_index??0 }}</span></td><td><em class="{{ strtolower($port->status?:'active') }}">{{ $port->status ?: 'Active' }}</em></td></tr>@endforeach</tbody></table></div>
+            </section>
+
+            <section class="di-card di-watch-panel">
+                <div class="di-card-head"><div><span>PRIORITY WATCH</span><h2>Top risk countries</h2></div><a href="{{ route('risk.index') }}">Full analysis</a></div>
+                <div class="di-watch-list">@foreach($topRiskCountries->take(5) as $country)@php $level=$country->risk_index>=70?'high':($country->risk_index>=40?'medium':'low'); @endphp<a href="{{ route('countries.show',$country) }}"><span>{{ $loop->iteration }}</span><img src="https://flagcdn.com/w40/{{ strtolower($country->country_code) }}.png" alt=""><div><strong>{{ $country->country_name }}</strong><small>{{ $country->region }}</small></div><b><i class="{{ $level }}" style="width:{{ min(100,$country->risk_index) }}%"></i></b><em class="{{ $level }}">{{ $country->risk_index }}</em></a>@endforeach</div>
+            </section>
+        </aside>
     </div>
 
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-warning">
-            <div class="inner">
-                <h3>{{ $europe }}</h3>
-                <p>Europe</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-globe-europe"></i>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-danger">
-            <div class="inner">
-                <h3>{{ $america }}</h3>
-                <p>America</p>
-            </div>
-            <div class="icon">
-                <i class="fas fa-flag"></i>
-            </div>
-        </div>
-    </div>
-
+    <footer class="di-sources"><span>DATA SOURCES</span>@foreach($dataSources as $source)<b><i></i>{{ $source }}</b>@endforeach<em>Last updated {{ now()->format('d M Y, H:i') }} WIB</em></footer>
 </div>
+@stop
 
-<div class="row">
-
-<div class="col-md-8">
-
-<div class="card">
-
-<div class="card-header">
-<h3 class="card-title">Jumlah Negara Berdasarkan Region</h3>
-</div>
-
-<div class="card-body">
-<canvas id="regionChart"></canvas>
-</div>
-
-</div>
-
-</div>
-
-<div class="col-md-4">
-
-<div class="card card-primary">
-
-<div class="card-header">
-<h3 class="card-title">Cuaca Jakarta</h3>
-</div>
-
-<div class="card-body">
-
-<p><b>Suhu</b> :
-{{ $weather['current']['temperature_2m'] ?? '-' }} °C</p>
-
-<p><b>Kelembaban</b> :
-{{ $weather['current']['relative_humidity_2m'] ?? '-' }} %</p>
-
-<p><b>Angin</b> :
-{{ $weather['current']['wind_speed_10m'] ?? '-' }} km/h</p>
-
-<hr>
-
-<h5>Kurs USD</h5>
-
-<p>IDR :
-{{ number_format($exchange['rates']['IDR'] ?? 0,2) }}</p>
-
-<p>EUR :
-{{ number_format($exchange['rates']['EUR'] ?? 0,2) }}</p>
-
-<p>JPY :
-{{ number_format($exchange['rates']['JPY'] ?? 0,2) }}</p>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="card">
-
-<div class="card-header">
-<h3 class="card-title">5 Negara Terbaru</h3>
-</div>
-
-<div class="card-body">
-
-<table class="table table-bordered">
-
-<thead>
-
-<tr>
-
-<th>No</th>
-<th>Country</th>
-<th>Code</th>
-<th>Region</th>
-<th>Capital</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@foreach($countries as $country)
-
-<tr>
-
-<td>{{ $loop->iteration }}</td>
-
-<td>{{ $country->country_name }}</td>
-
-<td>{{ $country->country_code }}</td>
-
-<td>{{ $country->region }}</td>
-
-<td>{{ $country->capital }}</td>
-
-</tr>
-
-@endforeach
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
+@section('css')
+<style>
+:root{--di-bg:#06111f;--di-panel:#0a192b;--di-panel2:#0d2035;--di-line:#193149;--di-text:#e8f2ff;--di-muted:#7890aa;--di-blue:#1684ff;--di-green:#22c66b;--di-amber:#f2b51d;--di-red:#ef4a55;--di-purple:#8a5cff}.content-wrapper{background:radial-gradient(circle at 55% 0,#0c2844 0,#071522 34%,#050e19 75%)!important}.content-header{padding:16px 18px 10px}.content{padding:0 18px 20px}.di-header{display:flex;align-items:center;justify-content:space-between;color:var(--di-text)}.di-kicker,.di-card-head>div>span{color:#4e9fff;font-size:8px;font-weight:800;letter-spacing:1.2px}.di-header h1{margin:2px 0 0;font-size:19px;font-weight:750}.di-header p{margin:3px 0 0;color:#7790a9;font-size:9px}.di-header-actions{display:flex;align-items:center;gap:9px}.di-header-actions form{display:flex;align-items:center;width:235px;height:37px;padding:0 11px;border:1px solid var(--di-line);border-radius:8px;background:#0b1a2c}.di-header-actions form i{color:#66809b;font-size:10px}.di-header-actions select{width:100%;border:0;outline:0;background:transparent;color:#bed0e3;padding-left:8px;font-size:9px}.di-header-actions option{background:#0b1a2c}.di-live{padding:9px 11px;border:1px solid #17432f;border-radius:8px;background:#0a251c;color:#6bdf9f;font-size:8px}.di-live>i{display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:#27cf75;box-shadow:0 0 0 4px rgba(39,207,117,.1)}.di-shell{color:var(--di-text)}.di-kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:9px}.di-card,.di-kpi{border:1px solid var(--di-line);border-radius:8px;background:linear-gradient(145deg,rgba(13,32,53,.98),rgba(7,21,36,.98));box-shadow:0 7px 25px rgba(0,0,0,.18)}.di-kpi{position:relative;min-height:86px;padding:12px;overflow:hidden}.di-kpi:after{content:"";position:absolute;top:-30px;right:-25px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(31,112,198,.12),transparent 70%)}.di-kpi>div span{display:block;color:#879cb1;font-size:8px;font-weight:700}.di-kpi strong{font-size:22px;line-height:28px}.di-kpi em{margin-left:5px;padding:2px 5px;border-radius:8px;font-size:7px;font-style:normal}.di-kpi em.low{color:#4add89;background:#0d3828}.di-kpi em.medium{color:#f7c94f;background:#3b2c09}.di-kpi em.high{color:#ff7780;background:#3c171e}.di-kpi>i{position:absolute;z-index:1;top:17px;right:13px;font-size:23px}.di-kpi>i.amber{color:#f2b51d}.di-kpi>i.green{color:#35cb78}.di-kpi>i.purple{color:#9a6cff}.di-kpi>i.blue{color:#2991ff}.di-kpi>i.teal{color:#25d29a}.di-kpi>small{position:absolute;bottom:10px;left:12px;color:#667e97;font-size:7px}.di-kpi>small .up{color:#29cb75}.di-main-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(310px,.95fr);gap:9px}.di-country-grid{display:grid;grid-template-columns:205px 1fr;gap:9px}.di-card{padding:11px;margin-bottom:9px}.di-card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:9px}.di-card-head h2{margin:1px 0 0;font-size:11px;font-weight:750}.di-card-head>a{color:#4e9fff;font-size:8px}.di-card-head>i{color:#53718f;font-size:10px}.di-selector form{display:flex;align-items:center;height:35px;padding:0 8px;border:1px solid #213c58;border-radius:6px;background:#081525}.di-selector form img{width:22px;height:15px;border-radius:2px;object-fit:cover}.di-selector select{width:100%;height:100%;padding-left:7px;border:0;outline:0;background:transparent;color:#d6e5f4;font-size:9px}.di-selector option{background:#0a192b}.di-country-preview{position:relative;height:66px;margin-top:8px;border-radius:6px;overflow:hidden}.di-country-preview>img{width:100%;height:100%;object-fit:cover;opacity:.35}.di-country-preview:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#061523 15%,transparent)}.di-country-preview>div{position:absolute;z-index:2;top:11px;left:11px}.di-country-preview span,.di-country-preview strong,.di-country-preview small{display:block}.di-country-preview span{color:#70a9df;font-size:6px;letter-spacing:.7px}.di-country-preview strong{font-size:12px}.di-country-preview small{color:#8aa0b5;font-size:7px}.di-profile-head{display:flex;align-items:center}.di-profile-head>img{width:36px;height:24px;margin-right:9px;border-radius:3px;object-fit:cover}.di-profile-head h2{margin:0;font-size:14px}.di-profile-head p{margin:1px 0 0;color:#728ba4;font-size:7px}.di-risk-badge{margin-left:auto;padding:4px 8px;border-radius:10px;font-size:7px;font-weight:800}.di-risk-badge.low{color:#43dc88;background:#0c3928}.di-risk-badge.medium{color:#f6c94e;background:#3d2e0b}.di-risk-badge.high{color:#ff7680;background:#401920}.di-profile-tabs{display:flex;gap:22px;margin-top:8px;border-bottom:1px solid #17304a}.di-profile-tabs span{padding:5px 0;color:#6f879f;font-size:7px}.di-profile-tabs .active{border-bottom:2px solid #258bff;color:#dbeaff}.di-profile-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:7px}.di-profile-metrics>div{padding:8px;border:1px solid #18314a;border-radius:6px;background:#0b1b2d}.di-profile-metrics span,.di-profile-metrics strong,.di-profile-metrics small{display:block}.di-profile-metrics span{color:#657f99;font-size:6px}.di-profile-metrics strong{margin:3px 0;font-size:12px}.di-profile-metrics small{color:#506b85;font-size:6px}.di-analysis-grid{display:grid;grid-template-columns:290px 1fr;gap:9px}.di-risk-content{display:flex;align-items:center;gap:13px}.di-score-ring{width:105px;height:105px;flex:0 0 105px;padding:6px;border-radius:50%;background:conic-gradient(#28ce75 calc(var(--score)*1%),#173149 0);box-shadow:0 0 22px rgba(34,198,107,.11)}.di-score-ring>div{display:grid;place-items:center;align-content:center;width:100%;height:100%;border-radius:50%;background:#09192a}.di-score-ring strong{font-size:25px}.di-score-ring span{color:#31d27a;font-size:8px}.di-risk-factors{flex:1}.di-risk-factors>div{display:grid;grid-template-columns:1fr 68px 34px;align-items:center;gap:6px;margin:8px 0}.di-risk-factors span{color:#8a9db1;font-size:7px}.di-risk-factors b{height:3px;border-radius:5px;background:#1b334a;overflow:hidden}.di-risk-factors b i{display:block;height:100%}.di-risk-factors i.blue{background:#2189ff}.di-risk-factors i.amber{background:#f0b41c}.di-risk-factors i.purple{background:#8e62f2}.di-risk-factors i.green{background:#27c973}.di-risk-factors em{color:#6d849b;font-size:6px;font-style:normal;text-align:right}.di-risk-note{display:flex;gap:6px;margin-top:8px;padding:7px;border-radius:6px;background:#0b2238;color:#6687a8;font-size:6px}.di-risk-note i{color:#4199f4}.di-map-panel{position:relative}.di-map-legend{display:flex;gap:8px}.di-map-legend b{color:#7189a1;font-size:6px}.di-map-legend i{display:inline-block;width:5px;height:5px;margin-right:3px;border-radius:50%}.low{background:#22c66b!important}.medium{background:#f2b51d!important}.high{background:#ef4a55!important}#dashboardMap{height:167px;border-radius:6px;background:#0b2032;filter:saturate(.75) brightness(.78)}.di-map-link{position:absolute;z-index:500;right:17px;bottom:18px;padding:5px 7px;border:1px solid #254866;border-radius:5px;background:#0b1d30;color:#8db7df!important;font-size:6px}.di-bottom-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:9px}.di-market-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.di-market-cards>div{position:relative;padding:8px;border:1px solid #18314a;border-radius:6px;background:#091828;overflow:hidden}.di-market-cards span,.di-market-cards strong,.di-market-cards small{display:block}.di-market-cards span{color:#6d849b;font-size:6px}.di-market-cards strong{margin:3px 0;font-size:10px}.di-market-cards small{color:#25c977;font-size:6px}.di-market-cards svg{position:absolute;right:4px;bottom:5px;width:45px;height:15px;fill:none;stroke:#24c873;stroke-width:1}.di-market-chart{position:relative;height:116px;margin-top:8px;padding-top:28px;border-radius:6px;background:linear-gradient(180deg,#0a1d31,#081522)}.di-chart-label{position:absolute;top:7px;left:9px}.di-chart-label span,.di-chart-label strong{display:block}.di-chart-label span{color:#54718d;font-size:6px}.di-chart-label strong{font-size:8px}.di-news-list>a{display:grid;grid-template-columns:34px 1fr auto;gap:7px;padding:6px 0;border-bottom:1px solid #173049;color:#d8e7f6}.di-news-list>a:hover{text-decoration:none}.di-news-thumb{display:grid;place-items:center;width:34px;height:30px;border-radius:4px;background:#102942;color:#4a9bf0}.di-news-list small,.di-news-list strong,.di-news-list p{display:block}.di-news-list small{color:#4e8ed2;font-size:5px;text-transform:capitalize}.di-news-list strong{margin:2px 0;color:#d5e3f1;font-size:7px;line-height:1.3}.di-news-list p{margin:0;color:#607993;font-size:5px}.di-news-list em{height:max-content;padding:2px 4px;border-radius:5px;font-size:5px;font-style:normal}.di-news-list em.positive{color:#31d078;background:#0b3827}.di-news-list em.neutral{color:#f2c345;background:#392b09}.di-news-list em.negative{color:#fa6973;background:#3a151c}.di-weather-hero{position:relative;padding:14px;border-radius:7px;background:radial-gradient(circle at 80% 10%,#174f7c 0,#0b2844 30%,#071726 70%);overflow:hidden}.di-weather-glow{position:absolute;right:-30px;top:-35px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(50,147,226,.25),transparent 70%)}.di-weather-main{position:relative;display:flex;align-items:center}.di-weather-main>i{width:44px;color:#79c8ff;font-size:30px}.di-weather-main>strong{margin-right:10px;font-size:29px}.di-weather-main sup{font-size:10px}.di-weather-main span,.di-weather-main small{display:block}.di-weather-main span{font-size:9px}.di-weather-main small{color:#6f91af;font-size:6px}.di-weather-metrics{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:13px}.di-weather-metrics>div{padding:7px;border:1px solid rgba(88,145,194,.2);border-radius:5px;background:rgba(6,24,40,.55)}.di-weather-metrics i{color:#3b9df2;font-size:8px}.di-weather-metrics span,.di-weather-metrics strong{display:block}.di-weather-metrics span{margin-top:4px;color:#6d89a2;font-size:6px}.di-weather-metrics strong{font-size:8px}.di-port-search{display:flex;align-items:center;height:30px;padding:0 8px;margin-bottom:7px;border:1px solid #18324c;border-radius:5px;background:#081624}.di-port-search i{color:#58748f;font-size:7px}.di-port-search input{width:100%;padding-left:7px;border:0;outline:0;background:transparent;color:#c9d9e8;font-size:7px}.di-port-table{width:100%;border-collapse:collapse}.di-port-table th{padding:6px;background:#10233a;color:#7890a8;font-size:5px;text-transform:uppercase}.di-port-table td{padding:7px 6px;border-bottom:1px solid #172d44;color:#8ca0b4;font-size:6px}.di-port-table td strong,.di-port-table td small{display:block}.di-port-table td strong{max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d1deeb;font-size:7px}.di-port-table td small{color:#546e87;font-size:5px}.di-port-table em{padding:2px 4px;border-radius:6px;color:#32d17a;background:#0b3928;font-size:5px;font-style:normal}.di-port-risk{display:inline-grid;place-items:center;width:21px;height:21px;border-radius:50%;font-size:6px;font-weight:800}.di-port-risk.low{color:#4cde8d;background:#0b3928!important}.di-port-risk.medium{color:#f4c446;background:#3a2b08!important}.di-port-risk.high{color:#ff727b;background:#3c161d!important}.di-watch-list>a{display:grid;grid-template-columns:14px 23px 1fr 65px 27px;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #173049;color:#d6e4f2}.di-watch-list>a:hover{text-decoration:none}.di-watch-list>a>span{color:#57718a;font-size:6px}.di-watch-list img{width:22px;height:14px;border-radius:2px;object-fit:cover}.di-watch-list strong,.di-watch-list small{display:block}.di-watch-list strong{font-size:7px}.di-watch-list small{color:#5e7891;font-size:5px}.di-watch-list b{height:3px;border-radius:5px;background:#1a334b}.di-watch-list b i{display:block;height:100%}.di-watch-list em{padding:3px;border-radius:6px;font-size:6px;font-style:normal;text-align:center}.di-watch-list em.low{color:#41db86;background:#0a3827!important}.di-watch-list em.medium{color:#f1c245;background:#382a08!important}.di-watch-list em.high{color:#fc6b75;background:#3b151c!important}.di-sources{display:flex;align-items:center;gap:13px;padding:9px 12px;border:1px solid var(--di-line);border-radius:7px;background:#081726}.di-sources>span{color:#63809c;font-size:6px;font-weight:800}.di-sources b{color:#8296aa;font-size:6px;font-weight:500}.di-sources b i{display:inline-block;width:5px;height:5px;margin-right:4px;border-radius:50%;background:#23c76e;box-shadow:0 0 0 2px rgba(35,199,110,.1)}.di-sources em{margin-left:auto;color:#587089;font-size:6px;font-style:normal}.leaflet-control-zoom a{background:#0b2034!important;border-color:#193a57!important;color:#a8c6e0!important}.leaflet-control-attribution{background:rgba(6,17,31,.7)!important;color:#59718a!important;font-size:5px!important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0b1c2e;color:#dbe8f4}.di-empty{padding:30px;text-align:center;color:#66809a;font-size:7px}
+.di-module-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:9px}.di-module-strip>a{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:9px;min-width:0;padding:10px 11px;border:1px solid var(--di-line);border-radius:8px;background:linear-gradient(135deg,#0b1d31,#081522);color:var(--di-text);transition:.18s ease}.di-module-strip>a:hover{border-color:#28649b;background:#0d2540;color:#fff;text-decoration:none;transform:translateY(-1px);box-shadow:0 8px 22px rgba(0,0,0,.22)}.di-module-strip>a>i{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:#102a45;font-size:13px}.di-module-strip i.blue{color:#45a1ff}.di-module-strip i.purple{color:#a47bff}.di-module-strip i.amber{color:#ffc43f}.di-module-strip i.green{color:#3cdb89}.di-module-strip span{min-width:0}.di-module-strip small,.di-module-strip strong,.di-module-strip em{display:block}.di-module-strip small{color:#4e9fff;font-size:5px;font-weight:800;letter-spacing:.7px}.di-module-strip strong{margin:2px 0;color:#e3effb;font-size:8px}.di-module-strip em{overflow:hidden;color:#647e97;font-size:6px;font-style:normal;text-overflow:ellipsis;white-space:nowrap}.di-module-strip>a>b{color:#6eaee9;font-size:6px;font-weight:600;white-space:nowrap}.di-module-strip>a>b i{margin-left:3px}.di-profile-tabs a{padding:5px 0;color:#6f879f;font-size:7px}.di-profile-tabs a:hover{color:#b8d7f4;text-decoration:none}.di-profile-tabs a.active{border-bottom:2px solid #258bff;color:#dbeaff}.di-profile-tabs span{display:none}
+@media(max-width:1200px){.di-kpi-grid{grid-template-columns:repeat(3,1fr)}.di-module-strip{grid-template-columns:1fr 1fr}.di-main-grid{grid-template-columns:1fr}.di-secondary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.di-secondary .di-card{height:calc(100% - 9px)}}@media(max-width:900px){.di-country-grid,.di-analysis-grid,.di-bottom-grid{grid-template-columns:1fr}.di-secondary{grid-template-columns:1fr 1fr}.di-profile-metrics{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.content-header,.content{padding-left:10px;padding-right:10px}.di-header-actions{display:none}.di-kpi-grid,.di-module-strip{grid-template-columns:1fr 1fr}.di-secondary{grid-template-columns:1fr}.di-profile-metrics{grid-template-columns:1fr 1fr}.di-module-strip>a{grid-template-columns:30px 1fr}.di-module-strip>a>i{width:30px;height:30px}.di-module-strip>a>b{display:none}.di-sources{flex-wrap:wrap}.di-sources em{width:100%;margin-left:0}}@media(max-width:430px){.di-kpi-grid,.di-module-strip{grid-template-columns:1fr}.di-country-grid{grid-template-columns:1fr}.di-profile-tabs{gap:10px}.di-market-cards{grid-template-columns:1fr 1fr}}
+.di-news-list>a{grid-template-columns:58px minmax(0,1fr) auto;align-items:center}.di-news-thumb{position:relative;width:58px;height:43px;overflow:hidden;background:linear-gradient(135deg,#123553,#0c2137)}.di-news-thumb img{position:absolute;z-index:2;inset:0;width:100%;height:100%;object-fit:cover}.di-news-thumb>i{position:relative;z-index:1}.di-news-list>a:hover .di-news-thumb img{transform:scale(1.05);transition:transform .25s}
+</style>
 @stop
 
 @section('js')
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
-
-new Chart(document.getElementById('regionChart'),{
-
-type:'bar',
-
-data:{
-
-labels:['Asia','Europe','Africa','America','Oceania'],
-
-datasets:[{
-
-label:'Countries',
-
-data:[
-{{ $asia }},
-{{ $europe }},
-{{ $africa }},
-{{ $america }},
-{{ $oceania }}
-],
-
-backgroundColor:[
-'#0d6efd',
-'#198754',
-'#ffc107',
-'#dc3545',
-'#6f42c1'
-]
-
-}]
-
-}
-
-});
-
+const currencyTrend=@json($currencyTrend);const ctx=document.getElementById('currencyChart');if(ctx&&currencyTrend.length){new Chart(ctx,{type:'line',data:{labels:currencyTrend.map(p=>p.date),datasets:[{data:currencyTrend.map(p=>p.value),borderColor:'#1684ff',backgroundColor:'rgba(22,132,255,.12)',borderWidth:1.8,pointRadius:0,pointHoverRadius:3,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},scales:{x:{grid:{display:false},ticks:{color:'#52708d',font:{size:6},maxTicksLimit:6,callback:(v,i)=>currencyTrend[i].date.slice(5)}},y:{position:'right',grid:{color:'rgba(80,112,145,.12)'},ticks:{color:'#52708d',font:{size:6},maxTicksLimit:4}}},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>'1 USD = '+new Intl.NumberFormat('en-US',{maximumFractionDigits:6}).format(c.raw)+' {{ $trendQuote }}'}}}}})}
+const portFilter=document.getElementById('portFilter');portFilter?.addEventListener('input',()=>{const query=portFilter.value.toLowerCase();document.querySelectorAll('.di-port-table tbody tr').forEach(row=>row.style.display=row.dataset.port.includes(query)?'':'none')});
 </script>
-
 @stop

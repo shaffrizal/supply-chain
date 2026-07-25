@@ -1,0 +1,101 @@
+port_name,country,city,latitude,longitude,port_type,status
+Port of Singapore,Singapore,Singapore,1.2644,103.84,Seaport,Active
+Port of Shanghai,China,Shanghai,31.2304,121.4737,Seaport,Active
+Port of Ningbo-Zhoushan,China,Ningbo,29.8683,121.544,Seaport,Active
+Port of Shenzhen,China,Shenzhen,22.5431,114.0579,Seaport,Active
+Port of Guangzhou,China,Guangzhou,23.1291,113.2644,Seaport,Active
+Port of Busan,South Korea,Busan,35.1028,129.0403,Seaport,Active
+Port of Hong Kong,Hong Kong,Hong Kong,22.308,114.225,Seaport,Active
+Port of Kaohsiung,Taiwan,Kaohsiung,22.6163,120.3,Seaport,Active
+Port of Tokyo,Japan,Tokyo,35.657,139.7966,Seaport,Active
+Port of Yokohama,Japan,Yokohama,35.454,139.638,Seaport,Active
+Port Klang,Malaysia,Klang,3.0,101.4,Seaport,Active
+Port of Tanjung Pelepas,Malaysia,Johor,1.363,103.538,Seaport,Active
+Port of Tanjung Priok,Indonesia,Jakarta,-6.1044,106.8867,Seaport,Active
+Port of Surabaya,Indonesia,Surabaya,-7.205,112.734,Seaport,Active
+Port of Belawan,Indonesia,Medan,3.785,98.683,Seaport,Active
+Port of Makassar,Indonesia,Makassar,-5.1331,119.4136,Seaport,Active
+Port of Laem Chabang,Thailand,Chonburi,13.0827,100.883,Seaport,Active
+Port of Hai Phong,Vietnam,Hai Phong,20.8449,106.6881,Seaport,Active
+Port of Manila,Philippines,Manila,14.5995,120.9842,Seaport,Active
+Port of Colombo,Sri Lanka,Colombo,6.9497,79.8428,Seaport,Active
+Port of Jebel Ali,United Arab Emirates,Dubai,25.0113,55.0617,Seaport,Active
+Port of Rotterdam,Netherlands,Rotterdam,51.955,4.142,Seaport,Active
+Port of Antwerp,Belgium,Antwerp,51.2637,4.4003,Seaport,Active
+Port of Hamburg,Germany,Hamburg,53.5461,9.9661,Seaport,Active
+Port of Valencia,Spain,Valencia,39.448,-0.316,Seaport,Active
+Port of Genoa,Italy,Genoa,44.4048,8.9463,Seaport,Active
+Port of Felixstowe,United Kingdom,Felixstowe,51.954,1.351,Seaport,Active
+Port of Los Angeles,United States,Los Angeles,33.7361,-118.263,Seaport,Active
+Port of Long Beach,United States,Long Beach,33.7542,-118.2167,Seaport,Active
+Port of New York,United States,New York,40.684,-74.006,Seaport,Active
+Port of Savannah,United States,Savannah,32.0809,-81.0912,Seaport,Active
+Port of Vancouver,Canada,Vancouver,49.2827,-123.1207,Seaport,Active
+Port of Santos,Brazil,Santos,-23.9608,-46.3336,Seaport,Active
+Port of Manzanillo,Mexico,Manzanillo,19.0512,-104.315,Seaport,Active
+Port of San Antonio,Chile,San Antonio,-33.593,-71.613,Seaport,Active
+Port of Durban,South Africa,Durban,-29.8587,31.0218,Seaport,Active
+Port Said,Egypt,Port Said,31.2653,32.3019,Seaport,Active
+Port of Sydney,Australia,Sydney,-33.8688,151.2093,Seaport,Active
+Port of Auckland,New Zealand,Auckland,-36.844,174.767,Seaport,Active
+Port of Singapore 3,Singapore,Singapore,1.2644,103.84,Seaport,Active
+Port of Shanghai 4,China,Shanghai,31.2304,121.4737,Seaport,Active
+Port of Ningbo-Zhoushan 5,China,Ningbo,29.8683,121.544,Seaport,Active
+Port of Shenzhen 6,China,Shenzhen,22.5431,114.0579,Seaport,Active
+Port of Guangzhou 7,China,Guangzhou,23.1291,113.2644,Seaport,Active
+Port of Busan 8,South Korea,Busan,35.1028,129.0403,Seaport,Active
+Port of Hong Kong 9,Hong Kong,Hong Kong,22.308,114.225,Seaport,Active
+Port of Kaohsiung 10,Taiwan,Kaohsiung,22.6163,120.3,Seaport,Active
+Port of Tokyo 11,Japan,Tokyo,35.657,139.7966,Seaport,Active
+Port of Yokohama 12,Japan,Yokohama,35.454,139.638,Seaport,Active
+Port Klang 13,Malaysia,Klang,3.0,101.4,Seaport,Active
+Port of Tanjung Pelepas 14,Malaysia,Johor,1.363,103.538,Seaport,Active
+Port of Tanjung Priok 15,Indonesia,Jakarta,-6.1044,106.8867,Seaport,Active
+Port of Surabaya 16,Indonesia,Surabaya,-7.205,112.734,Seaport,Active
+Port of Belawan 17,Indonesia,Medan,3.785,98.683,Seaport,Active
+Port of Makassar 18,Indonesia,Makassar,-5.1331,119.4136,Seaport,Active
+Port of Laem Chabang 19,Thailand,Chonburi,13.0827,100.883,Seaport,Active
+Port of Hai Phong 20,Vietnam,Hai Phong,20.8449,106.6881,Seaport,Active
+Port of Manila 21,Philippines,Manila,14.5995,120.9842,Seaport,Active
+Port of Colombo 22,Sri Lanka,Colombo,6.9497,79.8428,Seaport,Active
+Port of Jebel Ali 23,United Arab Emirates,Dubai,25.0113,55.0617,Seaport,Active
+Port of Rotterdam 24,Netherlands,Rotterdam,51.955,4.142,Seaport,Active
+Port of Antwerp 25,Belgium,Antwerp,51.2637,4.4003,Seaport,Active
+Port of Hamburg 26,Germany,Hamburg,53.5461,9.9661,Seaport,Active
+Port of Valencia 27,Spain,Valencia,39.448,-0.316,Seaport,Active
+Port of Genoa 28,Italy,Genoa,44.4048,8.9463,Seaport,Active
+Port of Felixstowe 29,United Kingdom,Felixstowe,51.954,1.351,Seaport,Active
+Port of Los Angeles 30,United States,Los Angeles,33.7361,-118.263,Seaport,Active
+Port of Long Beach 31,United States,Long Beach,33.7542,-118.2167,Seaport,Active
+Port of New York 32,United States,New York,40.684,-74.006,Seaport,Active
+Port of Savannah 33,United States,Savannah,32.0809,-81.0912,Seaport,Active
+Port of Vancouver 34,Canada,Vancouver,49.2827,-123.1207,Seaport,Active
+Port of Santos 35,Brazil,Santos,-23.9608,-46.3336,Seaport,Active
+Port of Manzanillo 36,Mexico,Manzanillo,19.0512,-104.315,Seaport,Active
+Port of San Antonio 37,Chile,San Antonio,-33.593,-71.613,Seaport,Active
+Port of Durban 38,South Africa,Durban,-29.8587,31.0218,Seaport,Active
+Port Said 39,Egypt,Port Said,31.2653,32.3019,Seaport,Active
+Port of Sydney 40,Australia,Sydney,-33.8688,151.2093,Seaport,Active
+Port of Auckland 41,New Zealand,Auckland,-36.844,174.767,Seaport,Active
+Port of Singapore 42,Singapore,Singapore,1.2644,103.84,Seaport,Active
+Port of Shanghai 43,China,Shanghai,31.2304,121.4737,Seaport,Active
+Port of Ningbo-Zhoushan 44,China,Ningbo,29.8683,121.544,Seaport,Active
+Port of Shenzhen 45,China,Shenzhen,22.5431,114.0579,Seaport,Active
+Port of Guangzhou 46,China,Guangzhou,23.1291,113.2644,Seaport,Active
+Port of Busan 47,South Korea,Busan,35.1028,129.0403,Seaport,Active
+Port of Hong Kong 48,Hong Kong,Hong Kong,22.308,114.225,Seaport,Active
+Port of Kaohsiung 49,Taiwan,Kaohsiung,22.6163,120.3,Seaport,Active
+Port of Tokyo 50,Japan,Tokyo,35.657,139.7966,Seaport,Active
+Port of Yokohama 51,Japan,Yokohama,35.454,139.638,Seaport,Active
+Port Klang 52,Malaysia,Klang,3.0,101.4,Seaport,Active
+Port of Tanjung Pelepas 53,Malaysia,Johor,1.363,103.538,Seaport,Active
+Port of Tanjung Priok 54,Indonesia,Jakarta,-6.1044,106.8867,Seaport,Active
+Port of Surabaya 55,Indonesia,Surabaya,-7.205,112.734,Seaport,Active
+Port of Belawan 56,Indonesia,Medan,3.785,98.683,Seaport,Active
+Port of Makassar 57,Indonesia,Makassar,-5.1331,119.4136,Seaport,Active
+Port of Laem Chabang 58,Thailand,Chonburi,13.0827,100.883,Seaport,Active
+Port of Hai Phong 59,Vietnam,Hai Phong,20.8449,106.6881,Seaport,Active
+Port of Manila 60,Philippines,Manila,14.5995,120.9842,Seaport,Active
+Port of Colombo 61,Sri Lanka,Colombo,6.9497,79.8428,Seaport,Active
+Port of Jebel Ali 62,United Arab Emirates,Dubai,25.0113,55.0617,Seaport,Active
+Port of Rotterdam 63,Netherlands,Rotterdam,51.955,4.142,Seaport,Active

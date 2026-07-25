@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'openweather' => [
+        'key' => env('OPENWEATHER_API_KEY'),
+    ],
+
+    'newsapi' => [
+        'key' => env('NEWS_API_KEY'),
+    ],
+
 ];

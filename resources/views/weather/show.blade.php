@@ -1,4 +1,4 @@
-@extends('adminlte::page')
+@extends('layouts.bootstrap5')
 
 @section('title', 'Weather')
 

@@ -1,126 +1,86 @@
-@extends('adminlte::page')
-
-@section('title','Countries')
+@extends('layouts.bootstrap5')
+@section('title','Countries | Supply Chain Intelligence')
 
 @section('content_header')
-<h1>Countries</h1>
+<div class="sc-page-head country-page-head">
+    <div><div class="country-breadcrumb"><a href="{{ route('dashboard') }}">Dashboard</a><i class="fas fa-chevron-right"></i><span>Countries</span></div><span class="country-kicker">GLOBAL DIRECTORY</span><h1>Country Intelligence</h1><p>Kelola profil negara dan pantau eksposur risiko rantai pasok global.</p></div>
+    <div class="sc-actions country-actions"><a href="{{ route('map.index') }}" class="country-map-link"><i class="fas fa-map-marked-alt"></i><span><small>GEOSPATIAL VIEW</small><strong>Open Risk Map</strong></span></a><span class="coverage-status"><i></i><span><small>GLOBAL COVERAGE</small><strong>{{ number_format($stats['total']) }} countries</strong></span></span>@can('admin')<a href="{{ route('admin.countries.create') }}" class="btn sc-btn sc-btn-primary add-country-btn"><i class="fas fa-plus mr-1"></i> Add Country</a>@endcan</div>
+</div>
 @stop
 
 @section('content')
+@if(session('success'))<div class="country-alert alert"><i class="fas fa-check-circle"></i><span>{{ session('success') }}</span><button type="button" data-bs-dismiss="alert" aria-label="Close"><i class="fas fa-times"></i></button></div>@endif
+@if(session('error'))<div class="alert alert-danger sc-alert"><i class="fas fa-exclamation-circle"></i><div>{{ session('error') }}</div></div>@endif
 
-@if(session('success'))
-
-<div class="alert alert-success">
-
-{{ session('success') }}
-
+<div class="country-stats">
+    <article><span class="blue"><i class="fas fa-globe-americas"></i></span><div><small>TOTAL COUNTRIES</small><strong>{{ number_format($stats['total']) }}</strong><p>Global intelligence coverage</p></div><em>100%</em></article>
+    <article><span class="green"><i class="fas fa-shield-alt"></i></span><div><small>LOW RISK</small><strong>{{ number_format($stats['low']) }}</strong><p>Score between 0–39</p></div><em>{{ $stats['total'] ? round($stats['low']/$stats['total']*100) : 0 }}%</em></article>
+    <article><span class="amber"><i class="fas fa-exclamation-circle"></i></span><div><small>MEDIUM RISK</small><strong>{{ number_format($stats['medium']) }}</strong><p>Score between 40–69</p></div><em>{{ $stats['total'] ? round($stats['medium']/$stats['total']*100) : 0 }}%</em></article>
+    <article><span class="red"><i class="fas fa-exclamation-triangle"></i></span><div><small>HIGH RISK</small><strong>{{ number_format($stats['high']) }}</strong><p>Score between 70–100</p></div><em>{{ $stats['total'] ? round($stats['high']/$stats['total']*100) : 0 }}%</em></article>
 </div>
 
-@endif
+<section class="risk-overview-strip">
+    <div><span class="country-kicker">RISK DISTRIBUTION</span><strong>Global exposure composition</strong></div>
+    <div class="distribution-track"><i class="low" style="width:{{ $stats['total'] ? $stats['low']/$stats['total']*100 : 0 }}%"></i><i class="medium" style="width:{{ $stats['total'] ? $stats['medium']/$stats['total']*100 : 0 }}%"></i><i class="high" style="width:{{ $stats['total'] ? $stats['high']/$stats['total']*100 : 0 }}%"></i></div>
+    <div class="distribution-legend"><span><i class="low"></i>Low <b>{{ $stats['low'] }}</b></span><span><i class="medium"></i>Medium <b>{{ $stats['medium'] }}</b></span><span><i class="high"></i>High <b>{{ $stats['high'] }}</b></span></div>
+    <a href="{{ route('risk.index') }}">Risk analytics <i class="fas fa-arrow-right"></i></a>
+</section>
 
-<a href="{{ route('countries.create') }}" class="btn btn-primary mb-3">
-Tambah Negara
-</a>
+<section class="sc-card country-directory">
+    <div class="directory-head">
+        <div class="directory-title"><span><i class="fas fa-database"></i></span><div><span class="country-kicker">MASTER DATA</span><h2>Country directory</h2><p>{{ number_format($countries->total()) }} records available</p></div></div>
+        <form method="GET" action="{{ route('countries.index') }}" class="country-filter">
+            <div class="country-search"><i class="fas fa-search"></i><input type="search" name="search" value="{{ $search }}" placeholder="Search country, ISO code, or capital..."></div>
+            <select name="region" onchange="this.form.submit()" aria-label="Filter by region"><option value="">All regions</option>@foreach($regions as $item)<option value="{{ $item }}" @selected($region===$item)>{{ $item }}</option>@endforeach</select>
+            <button class="btn sc-btn sc-btn-primary"><i class="fas fa-filter mr-1"></i> Apply</button>
+            @if($search || $region)<a href="{{ route('countries.index') }}" class="country-reset" title="Reset filter"><i class="fas fa-times"></i></a>@endif
+        </form>
+        @can('admin')<form method="POST" action="{{ route('admin.countries.importApi') }}" class="m-0">@csrf<button class="country-sync border-0" onclick="return confirm('Synchronize country data from REST Countries API?')"><i class="fas fa-sync-alt"></i><span><small>DATA SOURCE</small><strong>Sync REST Countries</strong></span></button></form>@endcan
+    </div>
 
-<a href="{{ route('countries.import') }}" class="btn btn-success mb-3">
-Import Excel
-</a>
+    <div class="table-responsive">
+        <table class="country-table">
+            <thead><tr><th>#</th><th>Country</th><th>ISO</th><th>Region</th><th>Capital</th><th>Population</th><th>Risk exposure</th><th class="text-right">Actions</th></tr></thead>
+            <tbody>
+            @forelse($countries as $country)
+                @php $riskLevel=$country->risk_index>=70?'High':($country->risk_index>=40?'Medium':'Low'); $tone=strtolower($riskLevel); @endphp
+                <tr>
+                    <td class="row-number">{{ $countries->firstItem()+$loop->index }}</td>
+                    <td><div class="country-name"><span><img src="https://flagcdn.com/w80/{{ strtolower($country->country_code) }}.png" alt="{{ $country->country_code }} flag" loading="lazy"></span><div><strong>{{ $country->country_name }}</strong><small>{{ $country->currency ?: 'Currency unavailable' }}</small></div></div></td>
+                    <td><span class="iso-code">{{ $country->country_code }}</span></td>
+                    <td><span class="region-pill">{{ $country->region ?: 'Other' }}</span></td>
+                    <td>{{ $country->capital ?: '—' }}</td>
+                    <td>{{ $country->population ? number_format($country->population) : '—' }}</td>
+                    <td><div class="risk-cell"><strong>{{ $country->risk_index }}</strong><span class="risk-track"><i class="{{ $tone }}" style="width:{{ min(100,$country->risk_index) }}%"></i></span><em class="{{ $tone }}">{{ $riskLevel }}</em></div></td>
+                    <td><div class="country-row-actions"><a href="{{ route('countries.show',$country) }}" class="view" title="View intelligence"><i class="fas fa-eye"></i></a>@can('admin')<a href="{{ route('admin.countries.edit',$country) }}" class="edit" title="Edit country"><i class="fas fa-pen"></i></a><form action="{{ route('admin.countries.destroy',$country) }}" method="POST">@csrf @method('DELETE')<button class="delete" title="Delete country" onclick="return confirm('Delete {{ addslashes($country->country_name) }}? This action cannot be undone.')"><i class="fas fa-trash"></i></button></form>@endcan</div></td>
+                </tr>
+            @empty
+                <tr><td colspan="8"><div class="country-empty"><i class="fas fa-search"></i><strong>No countries found</strong><span>Try another keyword or region filter.</span></div></td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="directory-footer"><span>Showing {{ $countries->firstItem() ?? 0 }}–{{ $countries->lastItem() ?? 0 }} of {{ number_format($countries->total()) }} countries</span>{{ $countries->links('pagination::bootstrap-4') }}</div>
+</section>
+@stop
 
-<div class="card">
+@section('css')
+<link rel="stylesheet" href="{{ asset('css/supply-chain.css') }}">
+<style>
+:root{--country-bg:#06111f;--country-panel:#0a192b;--country-panel-2:#0d2035;--country-line:#193149;--country-text:#e5effa;--country-muted:#7890aa;--country-blue:#1684ff}.content-wrapper{background:radial-gradient(circle at 55% 0,#0c2844 0,#071522 35%,#050e19 78%)!important}.content-header{color:var(--country-text)}.country-page-head h1{color:var(--country-text)}.country-page-head p{color:var(--country-muted)}
+.country-page-head{align-items:center}.country-kicker{color:#1479f8;font-size:8px;font-weight:800;letter-spacing:1.2px}.country-actions{display:flex;align-items:center;gap:9px}.coverage-status{display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid #dfe8f2;border-radius:10px;background:#fff}.coverage-status>i{width:7px;height:7px;border-radius:50%;background:#20b968;box-shadow:0 0 0 4px rgba(32,185,104,.1)}.coverage-status small,.coverage-status strong{display:block}.coverage-status small{color:#98a2b3;font-size:7px;letter-spacing:.8px}.coverage-status strong{color:#344054;font-size:10px}.country-alert{display:flex;align-items:center;gap:9px;margin-bottom:12px;padding:10px 13px;border:1px solid #c8eed8;border-radius:9px;background:#e7f8ee;color:#147c46;font-size:11px}.country-alert button{margin-left:auto;border:0;background:transparent;color:#147c46}.country-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.country-stats article{position:relative;display:flex;align-items:center;gap:12px;padding:15px;border:1px solid var(--sc-line);border-radius:13px;background:#fff;box-shadow:0 5px 18px rgba(29,55,89,.045);overflow:hidden}.country-stats article:after{content:"";position:absolute;right:-25px;top:-30px;width:85px;height:85px;border-radius:50%;background:rgba(20,121,248,.025)}.country-stats article>span{display:grid;place-items:center;width:45px;height:45px;flex:0 0 45px;border-radius:12px;font-size:16px}.country-stats .blue{color:#1479f8;background:#e3f0ff}.country-stats .green{color:#19ad60;background:#ddf8e8}.country-stats .amber{color:#d29400;background:#fff3c7}.country-stats .red{color:#e84654;background:#ffe1e1}.country-stats small,.country-stats strong,.country-stats p{display:block;margin:0}.country-stats small{color:#718096;font-size:8px;font-weight:800;letter-spacing:.5px}.country-stats strong{color:#101828;font-size:21px;line-height:24px}.country-stats p{color:#98a2b3;font-size:8px}.country-directory{overflow:hidden}.directory-head{display:grid;grid-template-columns:180px 1fr auto;align-items:center;gap:18px;padding:15px;border-bottom:1px solid var(--sc-line)}.directory-head h2{margin:2px 0 0;color:#101828;font-size:15px;font-weight:800}.directory-head p{margin:2px 0 0;color:#98a2b3;font-size:8px}.country-filter{display:flex;justify-content:flex-end;gap:7px}.country-search{display:flex;align-items:center;width:min(330px,100%);height:38px;padding:0 11px;border:1px solid #dce3ec;border-radius:9px;background:#f9fbfd}.country-search i{color:#98a2b3;font-size:10px}.country-search input{width:100%;padding-left:9px;border:0;outline:0;background:transparent;color:#344054;font-size:10px}.country-filter select{height:38px;min-width:135px;padding:0 10px;border:1px solid #dce3ec;border-radius:9px;background:#fff;color:#536176;font-size:10px}.country-search:focus-within,.country-filter select:focus{border-color:#1479f8;box-shadow:0 0 0 3px rgba(20,121,248,.08);outline:0}.country-reset{display:grid;place-items:center;width:38px;border:1px solid #dfe6ee;border-radius:9px;color:#8a97a8}.country-sync{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;background:#e7f8ee;color:#16894c}.country-sync:hover{text-decoration:none;color:#11733f}.country-sync>i{font-size:11px}.country-sync small,.country-sync strong{display:block}.country-sync small{font-size:6px;letter-spacing:.6px}.country-sync strong{font-size:8px}.country-table{width:100%;min-width:980px;border-collapse:collapse}.country-table th{padding:11px 13px;border-bottom:1px solid #e3eaf2;background:#f8fafc;color:#7a889b;font-size:8px;letter-spacing:.7px;text-transform:uppercase}.country-table td{padding:11px 13px;border-bottom:1px solid #e9eef4;color:#536176;font-size:10px;vertical-align:middle}.country-table tbody tr:hover{background:#fbfdff}.row-number{width:40px;color:#98a2b3!important}.country-name{display:flex;align-items:center;gap:9px}.country-name>span{width:37px;height:27px;border-radius:5px;overflow:hidden;box-shadow:0 1px 4px rgba(23,46,76,.14)}.country-name img{width:100%;height:100%;object-fit:cover}.country-name strong,.country-name small{display:block}.country-name strong{color:#16283f;font-size:10px}.country-name small{margin-top:2px;color:#98a2b3;font-size:7px}.iso-code{padding:5px 7px;border-radius:6px;background:#eef5ff;color:#1768d3;font-size:8px;font-weight:800}.region-pill{padding:5px 8px;border-radius:999px;background:#eef5ff;color:#2875cf;font-size:7px;font-weight:800}.risk-cell{display:grid;grid-template-columns:24px 50px 48px;align-items:center;gap:7px}.risk-cell>strong{color:#15283f;font-size:10px}.risk-track{height:4px;border-radius:5px;background:#edf1f6;overflow:hidden}.risk-track i{display:block;height:100%;border-radius:5px}.risk-track .low{background:#19ad60}.risk-track .medium{background:#edae19}.risk-track .high{background:#e84654}.risk-cell em{padding:4px 6px;border-radius:999px;font-size:7px;font-style:normal;font-weight:800;text-align:center}.risk-cell em.low{color:#16894c;background:#ddf8e8}.risk-cell em.medium{color:#936300;background:#fff3c7}.risk-cell em.high{color:#c72e2e;background:#ffe1e1}.country-row-actions{display:flex;justify-content:flex-end;gap:5px}.country-row-actions form{margin:0}.country-row-actions a,.country-row-actions button{display:grid;place-items:center;width:29px;height:29px;border:0;border-radius:7px;font-size:9px;transition:.18s}.country-row-actions .view{color:#1768d3;background:#e7f1ff}.country-row-actions .edit{color:#936300;background:#fff3c7}.country-row-actions .delete{color:#cb3040;background:#ffe5e8}.country-row-actions a:hover,.country-row-actions button:hover{transform:translateY(-1px);filter:brightness(.97);text-decoration:none}.country-empty{display:flex;align-items:center;flex-direction:column;gap:7px;padding:40px;color:#98a2b3}.country-empty i{font-size:20px}.country-empty strong{color:#536176}.directory-footer{display:flex;align-items:center;justify-content:space-between;padding:12px 14px}.directory-footer>span{color:#718096;font-size:8px}.directory-footer .pagination{margin:0}.directory-footer .page-link{font-size:9px}@media(max-width:1100px){.country-stats{grid-template-columns:1fr 1fr}.directory-head{grid-template-columns:1fr}.country-filter{justify-content:flex-start}.country-sync{width:max-content}}@media(max-width:650px){.coverage-status{display:none}.country-stats{grid-template-columns:1fr}.country-filter{display:grid;grid-template-columns:1fr auto}.country-search{grid-column:1/3;width:100%}.country-filter select{min-width:0}.directory-footer{align-items:flex-start;flex-direction:column;gap:10px}}
 
-<div class="card-body">
+/* Dark intelligence theme */
+.coverage-status{border-color:var(--country-line);background:#0a192b}.coverage-status strong{color:#d8e6f4}.coverage-status small{color:#607992}.country-alert{border-color:#18573b;background:#0a2b20;color:#5ee29a}.country-alert button{color:#5ee29a}.country-stats article,.country-directory{border-color:var(--country-line);background:linear-gradient(145deg,rgba(13,32,53,.98),rgba(7,21,36,.98));box-shadow:0 8px 25px rgba(0,0,0,.18)}.country-stats article:after{background:rgba(35,132,240,.06)}.country-stats .blue{color:#4ea3ff;background:#102d4b}.country-stats .green{color:#42db87;background:#0d3427}.country-stats .amber{color:#f4c443;background:#382d10}.country-stats .red{color:#ff6d77;background:#3b1920}.country-stats small{color:#7890aa}.country-stats strong{color:var(--country-text)}.country-stats p{color:#5e7690}.directory-head{border-color:var(--country-line)}.directory-head h2{color:var(--country-text)}.directory-head p{color:#607992}.country-search{border-color:#1c3955;background:#081725}.country-search input{color:#dce8f5}.country-search input::placeholder{color:#526c86}.country-filter select{border-color:#1c3955;background:#0a192b;color:#b9cbdd}.country-filter select option{background:#0a192b}.country-reset{border-color:#1c3955;color:#7890aa}.country-sync{color:#57dc93;background:#0b3326}.country-sync:hover{color:#79e9aa}.country-table th{border-color:var(--country-line);background:#0d2035;color:#7290aa}.country-table td{border-color:#172e46;color:#91a5b9}.country-table tbody tr:hover{background:#0d2238}.country-name strong{color:#e1ecf7}.country-name small{color:#617a93}.iso-code,.region-pill{color:#68acff;background:#102d4a}.risk-cell>strong{color:#e4eef9}.risk-track{background:#1a334b}.risk-cell em.low{color:#4ade89;background:#0d3628}.risk-cell em.medium{color:#f4c84a;background:#3a2e0c}.risk-cell em.high{color:#ff747e;background:#3d1820}.country-row-actions .view{color:#61a9ff;background:#102f50}.country-row-actions .edit{color:#f1c343;background:#392e0d}.country-row-actions .delete{color:#ff707a;background:#3b1820}.country-empty{color:#657f99}.country-empty strong{color:#b7c8d8}.directory-footer{border-top:1px solid var(--country-line)}.directory-footer>span{color:#70879f}.directory-footer .page-link{border-color:#1b3650;background:#0b1c2e;color:#8ca5be}.directory-footer .page-item.active .page-link{border-color:#1684ff;background:#1684ff;color:#fff}.directory-footer .page-item.disabled .page-link{background:#081725;color:#3f5870}
+.country-breadcrumb{display:flex;align-items:center;gap:7px;margin-bottom:7px;color:#54718e;font-size:7px}.country-breadcrumb a{color:#6aaeff}.country-breadcrumb i{font-size:5px}.country-map-link{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #1b3a58;border-radius:10px;background:#0a1c2f;color:#78b9ff}.country-map-link:hover{border-color:#28649b;color:#9bceff;text-decoration:none}.country-map-link>i{font-size:12px}.country-map-link small,.country-map-link strong{display:block}.country-map-link small{color:#527594;font-size:6px;letter-spacing:.7px}.country-map-link strong{font-size:8px}.add-country-btn{position:relative;overflow:hidden;background:linear-gradient(135deg,#1989ff,#1264e6)!important;box-shadow:0 7px 18px rgba(20,121,248,.25)!important}.add-country-btn:after{content:"";position:absolute;inset:-20px auto auto -30px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.1)}.country-stats article{min-height:87px;transition:transform .2s,border-color .2s}.country-stats article:hover{transform:translateY(-2px);border-color:#285071}.country-stats article>em{position:absolute;right:13px;bottom:12px;color:#54708c;font-size:8px;font-style:normal;font-weight:800}.country-stats article:nth-child(2)>em{color:#42ce82}.country-stats article:nth-child(3)>em{color:#e6b83e}.country-stats article:nth-child(4)>em{color:#ee6973}.risk-overview-strip{display:grid;grid-template-columns:160px minmax(220px,1fr) auto auto;align-items:center;gap:18px;margin-bottom:12px;padding:11px 14px;border:1px solid var(--country-line);border-radius:11px;background:linear-gradient(90deg,#0b1c30,#091725);box-shadow:0 5px 18px rgba(0,0,0,.12)}.risk-overview-strip>div:first-child strong{display:block;margin-top:2px;color:#d7e4f1;font-size:9px}.distribution-track{display:flex;height:6px;border-radius:8px;background:#142c43;overflow:hidden}.distribution-track i{height:100%}.distribution-track .low{background:#22c66b}.distribution-track .medium{background:#f2b51d}.distribution-track .high{background:#ef4a55}.distribution-legend{display:flex;gap:12px}.distribution-legend span{color:#7990a7;font-size:7px}.distribution-legend span>i{display:inline-block;width:6px;height:6px;margin-right:4px;border-radius:50%}.distribution-legend b{margin-left:3px;color:#d8e5f1}.risk-overview-strip>a{color:#65acfa;font-size:8px;font-weight:800;white-space:nowrap}.risk-overview-strip>a i{margin-left:5px}.risk-overview-strip>a:hover{text-decoration:none}.directory-title{display:flex;align-items:center;gap:9px}.directory-title>span{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:#102f4f;color:#59a6f7;font-size:11px}.country-table thead th{position:sticky;top:0;z-index:2}.country-table tbody tr{transition:background .18s,box-shadow .18s}.country-table tbody tr:hover{box-shadow:inset 3px 0 #1684ff}.country-name>span{border:1px solid #27425d}.directory-footer{background:#081725}
+@media(max-width:1100px){.risk-overview-strip{grid-template-columns:150px 1fr auto}.risk-overview-strip>a{display:none}.country-map-link{display:none}}@media(max-width:700px){.risk-overview-strip{grid-template-columns:1fr}.distribution-legend{justify-content:space-between}.country-stats article>em{display:none}}
 
-<table class="table table-bordered table-striped">
-
-<thead>
-
-<tr>
-
-<th>No</th>
-<th>Country</th>
-<th>Code</th>
-<th>Region</th>
-<th>Capital</th>
-<th>Aksi</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-@forelse($countries as $country)
-
-<tr>
-
-<td>{{ $loop->iteration }}</td>
-
-<td>{{ $country->country_name }}</td>
-
-<td>{{ $country->country_code }}</td>
-
-<td>{{ $country->region }}</td>
-
-<td>{{ $country->capital }}</td>
-
-<td>
-
-    <a href="{{ route('countries.show',$country->id) }}"
-       class="btn btn-info btn-sm">
-
-        Detail
-
-    </a>
-
-    <a href="{{ route('countries.edit',$country->id) }}"
-       class="btn btn-warning btn-sm">
-
-        Edit
-
-    </a>
-
-    <form
-        action="{{ route('countries.destroy',$country->id) }}"
-        method="POST"
-        style="display:inline;">
-
-        @csrf
-        @method('DELETE')
-
-        <button
-            class="btn btn-danger btn-sm"
-            onclick="return confirm('Yakin ingin menghapus?')">
-
-            Hapus
-
-        </button>
-
-    </form>
-
-</td>
-
-@empty
-
-<tr>
-
-<td colspan="6" class="text-center">
-
-Belum ada data.
-
-</td>
-
-</tr>
-
-@endforelse
-
-</tbody>
-
-</table>
-
-{{ $countries->links() }}
-
-</div>
-
-</div>
-
+/* Country intelligence orbital background */
+.content-wrapper{position:relative;background:linear-gradient(180deg,rgba(3,14,26,.48) 0%,rgba(4,16,29,.76) 38%,rgba(4,14,25,.94) 82%),linear-gradient(90deg,rgba(4,16,29,.62),rgba(4,16,29,.2)),url('{{ asset('images/country-intelligence-background-v2.png') }}') center top/cover fixed no-repeat!important}
+.content-wrapper:before{content:"";position:absolute;z-index:0;inset:0;pointer-events:none;background:radial-gradient(circle at 78% 3%,rgba(35,137,240,.16),transparent 36%),linear-gradient(180deg,transparent 0,#050f1b 92%)}
+.content-wrapper>.content-header,.content-wrapper>.content{position:relative;z-index:1}.country-page-head{padding:10px 13px;border:1px solid rgba(45,89,125,.36);border-radius:13px;background:linear-gradient(90deg,rgba(6,22,37,.72),rgba(8,28,47,.38));box-shadow:0 16px 38px rgba(0,0,0,.18);backdrop-filter:blur(3px)}
+.country-stats article,.country-directory{background:linear-gradient(145deg,rgba(13,32,53,.9),rgba(7,21,36,.94));box-shadow:0 12px 30px rgba(0,0,0,.27);backdrop-filter:blur(5px)}.risk-overview-strip{background:linear-gradient(90deg,rgba(11,28,48,.91),rgba(9,23,37,.87));box-shadow:0 10px 28px rgba(0,0,0,.24);backdrop-filter:blur(5px)}
+.directory-head{background:linear-gradient(90deg,rgba(9,28,47,.62),rgba(8,23,39,.78))}.country-table tbody{background:rgba(6,19,32,.72)}.directory-footer{background:rgba(6,20,34,.9)}
+@media(max-width:767px){.content-wrapper{background-attachment:scroll!important;background-position:62% top!important}.country-page-head{padding:9px;background:rgba(6,22,37,.84)}}
+</style>
 @stop

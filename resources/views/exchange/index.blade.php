@@ -1,59 +1,48 @@
-@extends('adminlte::page')
-
-@section('title', 'Exchange Rate')
+@extends('layouts.bootstrap5')
+@section('title','Currency Intelligence')
 
 @section('content_header')
-<h1>Nilai Tukar Mata Uang</h1>
+<div class="sc-page-head"><div><span class="page-kicker">FOREIGN EXCHANGE INTELLIGENCE</span><h1>Currency Impact Dashboard</h1><p>Monitor international exchange rates and calculate currency exposure for global trade.</p></div><div class="sc-actions"><span class="api-status"><i></i> Live + historical feeds</span><form method="GET" action="{{ route('exchange.index') }}" class="base-form"><label>Base</label><select name="base" onchange="this.form.submit()">@foreach($majorRates as $currency)<option value="{{ $currency['code'] }}" @selected($base===$currency['code'])>{{ $currency['flag'] }} {{ $currency['code'] }}</option>@endforeach</select><input type="hidden" name="quote" value="{{ $quote }}"></form></div></div>
 @stop
 
 @section('content')
-
-<div class="card">
-    <div class="card-body">
-
-        <h3>Base Currency : {{ $data['base_code'] }}</h3>
-
-        <table class="table table-bordered">
-
-            <thead>
-                <tr>
-                    <th>Mata Uang</th>
-                    <th>Nilai Tukar</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <tr>
-                    <td>IDR</td>
-                    <td>{{ number_format($data['conversion_rates']['IDR'],2) }}</td>
-                </tr>
-
-                <tr>
-                    <td>EUR</td>
-                    <td>{{ number_format($data['conversion_rates']['EUR'],2) }}</td>
-                </tr>
-
-                <tr>
-                    <td>JPY</td>
-                    <td>{{ number_format($data['conversion_rates']['JPY'],2) }}</td>
-                </tr>
-
-                <tr>
-                    <td>MYR</td>
-                    <td>{{ number_format($data['conversion_rates']['MYR'],2) }}</td>
-                </tr>
-
-                <tr>
-                    <td>SGD</td>
-                    <td>{{ number_format($data['conversion_rates']['SGD'],2) }}</td>
-                </tr>
-
-            </tbody>
-
-        </table>
-
-    </div>
+@if(!$exchange)<div class="api-error"><i class="fas fa-exclamation-circle"></i><div><strong>Currency data is temporarily unavailable</strong><p>Please try again in a few moments. No stored database data has been affected.</p></div></div>@else
+@php $updated=isset($exchange['time_last_update_unix'])?\Carbon\Carbon::createFromTimestamp($exchange['time_last_update_unix']):null; @endphp
+<div class="currency-stats">
+    <div><span class="stat-icon blue"><i class="fas fa-coins"></i></span><p>Base Currency<strong>{{ $base }}</strong><small>{{ $majorRates->firstWhere('code',$base)['name']??$base }}</small></p></div>
+    <div><span class="stat-icon green"><i class="fas fa-globe"></i></span><p>Available Currencies<strong>{{ number_format($allRates->count()) }}</strong><small>global exchange coverage</small></p></div>
+    <div><span class="stat-icon purple"><i class="fas fa-clock"></i></span><p>Last Updated<strong>{{ $updated?->format('H:i')??'—' }}</strong><small>{{ $updated?->format('d M Y')??'provider time unavailable' }}</small></p></div>
+    <div><span class="stat-icon orange"><i class="fas fa-rupiah-sign"></i></span><p>{{ $base }} to IDR<strong>{{ isset($exchange['rates']['IDR'])?number_format($exchange['rates']['IDR'],2):'—' }}</strong><small>Indonesian Rupiah</small></p></div>
+    <div><span class="stat-icon cyan"><i class="fas fa-yen-sign"></i></span><p>{{ $base }} to JPY<strong>{{ isset($exchange['rates']['JPY'])?number_format($exchange['rates']['JPY'],2):'—' }}</strong><small>Japanese Yen</small></p></div>
 </div>
 
+<div class="row exchange-layout">
+    <div class="col-xl-4"><section class="sc-card converter-card"><div class="panel-head"><div><span>CURRENCY TOOL</span><h2>Exchange Converter</h2></div><i class="fas fa-calculator"></i></div><div class="converter-field"><label>Amount</label><div><input id="convertAmount" type="number" min="0" step="any" value="1"><select id="convertFrom">@foreach($allRates as $currency)<option value="{{ $currency['code'] }}" @selected($currency['code']===$base)>{{ $currency['flag'] }} {{ $currency['code'] }}</option>@endforeach</select></div></div><button class="swap-btn" type="button" onclick="swapCurrencies()"><i class="fas fa-exchange-alt fa-rotate-90"></i></button><div class="converter-field"><label>Convert to</label><select id="convertTo">@foreach($allRates as $currency)<option value="{{ $currency['code'] }}" @selected($currency['code']==='IDR')>{{ $currency['flag'] }} {{ $currency['code'] }} · {{ $currency['name'] }}</option>@endforeach</select></div><div class="conversion-result"><span>Converted amount</span><strong id="convertResult">—</strong><small id="conversionRate">Select currencies to calculate</small></div><p class="converter-note"><i class="fas fa-info-circle"></i> Indicative midpoint rate. Actual bank and transfer fees may differ.</p></section></div>
+    <div class="col-xl-8"><section class="sc-card chart-card"><div class="panel-head"><div><span>HISTORICAL MARKET DATA</span><h2>{{ $base }} / {{ $quote }} · 30-Day Trend</h2></div><form class="trend-pair" method="GET"><input type="hidden" name="base" value="{{ $base }}"><label>Quote</label><select name="quote" onchange="this.form.submit()">@foreach($allRates as $currency)@if($currency['code']!==$base)<option value="{{ $currency['code'] }}" @selected($quote===$currency['code'])>{{ $currency['code'] }}</option>@endif @endforeach</select></form></div><div class="rate-chart">@if(count($currencyTrend)>1)<canvas id="rateTrendChart"></canvas>@else<div class="trend-empty"><i class="fas fa-chart-line"></i><strong>Historical data unavailable</strong><span>The provider may not support this pair.</span></div>@endif</div><div class="trend-source"><i class="fas fa-database"></i> Central-bank reference rates via Frankfurter · cached 6 hours</div></section></div>
+</div>
+
+<section class="sc-card major-section"><div class="list-head"><div><span>MARKET SNAPSHOT</span><h2>Major Currency Rates</h2></div><span class="updated-label"><i class="fas fa-sync-alt"></i> Cached for 1 hour</span></div><div class="major-grid">
+@foreach($majorRates as $currency)<article class="{{ $currency['code']===$base?'selected':'' }}"><div class="currency-head"><span class="flag-image"><img src="https://flagcdn.com/w40/{{ $currency['flag_code'] }}.png" alt="{{ $currency['name'] }} flag" loading="lazy"></span><div><strong>{{ $currency['code'] }}</strong><small>{{ $currency['name'] }}</small></div>@if($currency['code']===$base)<em>BASE</em>@endif</div><div class="major-rate"><span>1 {{ $base }}</span><strong>{{ $currency['rate']!==null?number_format($currency['rate'],4):'—' }}</strong><small>{{ $currency['code'] }}</small></div></article>@endforeach
+</div></section>
+
+<section class="sc-card directory-card"><div class="directory-head"><div><span>GLOBAL DIRECTORY</span><h2>All Exchange Rates</h2></div><div class="rate-search"><i class="fas fa-search"></i><input id="rateSearch" placeholder="Search currency code..."></div></div><div class="table-responsive"><table class="table sc-table rate-table" id="rateTable"><thead><tr><th>#</th><th>Currency</th><th>Name</th><th>Rate per 1 {{ $base }}</th><th>Inverse Rate</th></tr></thead><tbody>
+@foreach($allRates as $currency)<tr data-search="{{ strtolower($currency['code'].' '.$currency['name']) }}"><td class="row-number">{{ $loop->iteration }}</td><td><div class="currency-code"><span class="flag-image">@if($currency['flag_code'])<img src="https://flagcdn.com/w40/{{ $currency['flag_code'] }}.png" alt="{{ $currency['code'] }} flag" loading="lazy">@else<i class="fas fa-globe"></i>@endif</span><strong>{{ $currency['code'] }}</strong></div></td><td>{{ $currency['name'] }}</td><td><strong class="rate-value">{{ number_format($currency['rate'],6) }}</strong></td><td>{{ $currency['rate']?number_format(1/$currency['rate'],8):'—' }} {{ $base }}</td></tr>@endforeach
+</tbody></table></div><div class="directory-footer"><span id="visibleCount">Showing {{ $allRates->count() }} currencies</span><a href="{{ $exchange['documentation']??'https://www.exchangerate-api.com/docs/free' }}" target="_blank">API documentation <i class="fas fa-external-link-alt"></i></a></div></section>
+@endif
+@stop
+
+@section('css')
+<link rel="stylesheet" href="{{ asset('css/supply-chain.css') }}"><style>
+.page-kicker,.panel-head span,.list-head>div>span,.directory-head>div>span{font-size:9px;color:#1479f8;font-weight:800;letter-spacing:1.1px}.api-status{font-size:9px;color:#16894c;background:#e5f8ed;padding:8px 10px;border-radius:8px;font-weight:750;margin-right:5px}.api-status i{display:inline-block;width:7px;height:7px;background:#19ad60;border-radius:50%;margin-right:4px}.base-form{display:inline-flex;align-items:center;border:1px solid #dce3ec;background:#fff;border-radius:8px;height:34px;padding:0 8px}.base-form label{font-size:8px;color:#98a2b3;margin:0 5px 0 0;text-transform:uppercase}.base-form select{border:0;outline:0;font-size:10px;font-weight:800;color:#101828}.api-error{display:flex;align-items:center;background:#fff1f2;border:1px solid #ffd5d9;color:#bd2d3a;border-radius:11px;padding:18px}.api-error>i{font-size:24px;margin-right:12px}.api-error strong{font-size:12px}.api-error p{font-size:9px;margin:2px 0}.currency-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:13px}.currency-stats>div{background:#fff;border:1px solid var(--sc-line);border-radius:12px;padding:13px;display:flex;align-items:center}.stat-icon{width:42px;height:42px;min-width:42px;border-radius:11px;display:grid;place-items:center;margin-right:9px}.stat-icon.blue{background:#e3f0ff;color:#1479f8}.stat-icon.green{background:#ddf8e8;color:#19ad60}.stat-icon.purple{background:#eee9ff;color:#7654dc}.stat-icon.orange{background:#fff0df;color:#ea8421}.stat-icon.cyan{background:#dff6fb;color:#1592aa}.currency-stats p{font-size:9px;color:#667085;font-weight:700;margin:0}.currency-stats strong,.currency-stats small{display:block}.currency-stats strong{font-size:17px;color:#101828;line-height:21px;white-space:nowrap}.currency-stats small{font-size:8px;color:#98a2b3;font-weight:400}.exchange-layout{margin-left:-6px;margin-right:-6px}.exchange-layout>[class*=col-]{padding-left:6px;padding-right:6px}.converter-card,.chart-card{padding:13px;height:348px;margin-bottom:13px}.panel-head,.list-head,.directory-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.panel-head h2,.list-head h2,.directory-head h2{font-size:14px;font-weight:750;color:#101828;margin:1px 0 0}.panel-head>i{color:#1479f8}.converter-field label{display:block;font-size:8px;color:#667085;text-transform:uppercase;margin-bottom:4px}.converter-field>div{display:grid;grid-template-columns:1fr 75px}.converter-field input,.converter-field select{height:38px;border:1px solid #dce3ec;background:#fff;padding:0 9px;font-size:11px;outline:0}.converter-field input{border-radius:8px 0 0 8px}.converter-field>div select{border-left:0;border-radius:0 8px 8px 0}.converter-field>select{width:100%;border-radius:8px}.swap-btn{display:block;width:28px;height:28px;border:1px solid #dce3ec;border-radius:50%;background:#fff;color:#1479f8;margin:6px auto;cursor:pointer}.conversion-result{background:linear-gradient(135deg,#0f73ec,#1761cf);color:#fff;border-radius:9px;padding:11px;margin-top:10px}.conversion-result span,.conversion-result strong,.conversion-result small{display:block}.conversion-result span{font-size:8px;opacity:.75}.conversion-result strong{font-size:20px}.conversion-result small{font-size:8px;opacity:.8}.converter-note{font-size:8px;color:#667085;margin:9px 0 0}.converter-note i{color:#1479f8}.chart-note,.updated-label{font-size:8px;color:#667085;background:#f1f4f8;padding:5px 8px;border-radius:8px}.rate-chart{height:285px}.major-section,.directory-card{overflow:hidden;margin-bottom:13px}.list-head{padding:13px;margin:0;border-bottom:1px solid var(--sc-line)}.major-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;padding:13px}.major-grid article{border:1px solid var(--sc-line);border-radius:10px;padding:9px}.major-grid article.selected{border-color:#84baff;background:#f3f8ff}.currency-head{display:grid;grid-template-columns:31px 1fr auto;align-items:center}.currency-head>span{font-size:20px}.currency-head strong,.currency-head small{display:block}.currency-head strong{font-size:10px;color:#101828}.currency-head small{font-size:7px;color:#98a2b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.currency-head em{font-style:normal;font-size:6px;background:#1479f8;color:#fff;padding:3px 5px;border-radius:6px}.major-rate{border-top:1px solid var(--sc-line);margin-top:8px;padding-top:8px}.major-rate span,.major-rate small{font-size:7px;color:#98a2b3}.major-rate strong{display:inline-block;font-size:12px;color:#101828;margin:0 3px}.directory-head{padding:13px;margin:0;border-bottom:1px solid var(--sc-line)}.rate-search{position:relative}.rate-search i{position:absolute;left:10px;top:10px;font-size:9px;color:#98a2b3}.rate-search input{height:32px;width:220px;border:1px solid #dce3ec;border-radius:7px;padding:0 9px 0 28px;font-size:9px;outline:0}.rate-table{min-width:700px}.row-number{color:#98a2b3!important}.currency-code{display:flex;align-items:center;gap:7px}.currency-code span{font-size:16px}.currency-code strong,.rate-value{font-size:10px;color:#101828}.directory-footer{display:flex;justify-content:space-between;padding:11px 13px;border-top:1px solid var(--sc-line);font-size:8px;color:#667085}.directory-footer a{font-weight:750}@media(max-width:1199px){.currency-stats{grid-template-columns:repeat(3,1fr)}.major-grid{grid-template-columns:repeat(3,1fr)}.converter-card,.chart-card{height:auto}}@media(max-width:700px){.currency-stats{grid-template-columns:1fr 1fr}.major-grid{grid-template-columns:1fr 1fr}.directory-head{display:block}.rate-search{margin-top:8px}.rate-search input{width:100%}}@media(max-width:450px){.currency-stats,.major-grid{grid-template-columns:1fr}}
+.flag-image{width:27px!important;height:19px!important;border-radius:4px;overflow:hidden;display:grid!important;place-items:center;background:#eef2f6;color:#98a2b3;font-size:10px!important}.flag-image img{display:block;width:100%;height:100%;object-fit:cover}
+.trend-pair{display:flex;align-items:center;gap:6px}.trend-pair label{margin:0;color:#98a2b3;font-size:8px}.trend-pair select{height:29px;border:1px solid #dce3ec;border-radius:7px;background:#fff;padding:0 24px 0 8px;color:#344054;font-size:9px;font-weight:750}.trend-source{margin-top:6px;color:#98a2b3;font-size:7px;text-align:right}.trend-source i{color:#1479f8}.trend-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;height:100%;color:#98a2b3}.trend-empty i{margin-bottom:8px;color:#b9cdf0;font-size:28px}.trend-empty strong{color:#667085;font-size:11px}.trend-empty span{font-size:8px}
+</style>
+@stop
+
+@section('js')
+@if($exchange)<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script>
+const rates=@json($exchange['rates']);const names=@json($majorRates->pluck('name','code'));function formatNumber(value,code){return new Intl.NumberFormat('en-US',{maximumFractionDigits:code==='IDR'||code==='JPY'||code==='KRW'?2:6}).format(value)}function convert(){const amount=parseFloat(document.getElementById('convertAmount').value)||0,from=document.getElementById('convertFrom').value,to=document.getElementById('convertTo').value;const result=amount/rates[from]*rates[to],unit=rates[to]/rates[from];document.getElementById('convertResult').textContent=formatNumber(result,to)+' '+to;document.getElementById('conversionRate').textContent='1 '+from+' = '+formatNumber(unit,to)+' '+to}function swapCurrencies(){const from=document.getElementById('convertFrom'),to=document.getElementById('convertTo'),value=from.value;from.value=to.value;to.value=value;convert()}['convertAmount','convertFrom','convertTo'].forEach(id=>document.getElementById(id).addEventListener('input',convert));convert();
+const trend=@json($currencyTrend),trendCanvas=document.getElementById('rateTrendChart');if(trendCanvas&&trend.length){const values=trend.map(p=>p.value),up=values.at(-1)>=values[0],color=up?'#19ad60':'#e84654';new Chart(trendCanvas,{type:'line',data:{labels:trend.map(p=>p.date),datasets:[{data:values,borderColor:color,backgroundColor:up?'rgba(25,173,96,.10)':'rgba(232,70,84,.10)',fill:true,tension:.28,borderWidth:2,pointRadius:0,pointHoverRadius:4}]},options:{maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>'1 {{ $base }} = '+formatNumber(c.raw,'{{ $quote }}')+' {{ $quote }}'}}},scales:{x:{grid:{display:false},ticks:{font:{size:8},maxTicksLimit:7,callback:(v,i)=>trend[i].date.slice(5)}},y:{position:'right',grid:{color:'#eef2f6'},ticks:{font:{size:8},callback:v=>formatNumber(v,'{{ $quote }}')}}}}})}
+const search=document.getElementById('rateSearch');search.addEventListener('input',()=>{let visible=0;document.querySelectorAll('#rateTable tbody tr').forEach(row=>{const show=row.dataset.search.includes(search.value.toLowerCase().trim());row.style.display=show?'':'none';if(show)visible++});document.getElementById('visibleCount').textContent='Showing '+visible+' currencies'});
+</script>@endif
 @stop
