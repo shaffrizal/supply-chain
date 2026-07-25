@@ -132,8 +132,8 @@
                         </td>
                         <td class="text-center align-middle">
                             <div class="btn-group shadow-sm">
-                                <button class="btn btn-xs btn-outline-info px-2" title="Edit Bulletin"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-xs btn-outline-danger px-2" title="Revoke Bulletin"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-xs btn-outline-info px-2" title="Edit Bulletin" data-bs-toggle="modal" data-bs-target="#editArticle{{ $article->id }}"><i class="fas fa-edit"></i></button>
+                                <form method="POST" action="{{ route('admin.articles.destroy',$article) }}" onsubmit="return confirm('Delete this intelligence brief?')">@csrf @method('DELETE')<button class="btn btn-xs btn-outline-danger px-2" title="Revoke Bulletin"><i class="fas fa-trash"></i></button></form>
                             </div>
                         </td>
                     </tr>
@@ -207,6 +207,12 @@
         </div>
     </div>
 </div>
+@foreach($articles as $article)
+<div class="modal fade" id="editArticle{{ $article->id }}" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><form class="modal-content" method="POST" action="{{ route('admin.articles.update',$article) }}">@csrf @method('PUT')
+<div class="modal-header"><h5 class="modal-title">Edit Intelligence Brief</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><div class="form-group"><label>Title</label><input class="form-control" name="title" value="{{ $article->title }}" required></div><div class="form-group"><label>Category</label><input class="form-control" name="category" value="{{ $article->category }}" required></div><div class="form-group"><label>Content</label><textarea class="form-control" name="content" rows="8" required>{{ $article->content }}</textarea></div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save Changes</button></div></form></div></div>
+@endforeach
 @stop
 
 @section('css')

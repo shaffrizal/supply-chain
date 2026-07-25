@@ -17,6 +17,12 @@ Framework: Laravel 12 / PHP 8.2
 - [x] Dashboard and realtime overview return HTTP 200.
 - [x] External providers use timeouts, cache, and safe fallbacks.
 - [x] Admin mutations require authentication and the Admin role.
+- [x] GNews is the primary news provider, with an optional NewsAPI fallback.
+- [x] Country languages, inflation, exports, and imports are represented and displayed.
+- [x] Country Comparison includes inflation, weather, currency, exports, and imports.
+- [x] Admin User and Article modules support create, read, update, and delete.
+- [x] Scheduled risk weather data uses Open-Meteo.
+- [x] The 12,000-facility dataset is documented as source ports plus simulated terminal/facility records.
 
 ## Before presenting or deploying
 
@@ -46,4 +52,4 @@ php artisan route:list
 php artisan schedule:list
 ```
 
-The academic rubric must still be checked separately because it is not included in this repository.
+The implementation has been cross-checked against the supplied PROJECT FINAL requirements; keep the original PDF together with this checklist as presentation evidence.

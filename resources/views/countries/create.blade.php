@@ -21,6 +21,7 @@
             <div class="col-md-4 form-group"><label>Region</label><input name="region" class="form-control" value="{{ old('region') }}" required maxlength="100"></div>
             <div class="col-md-4 form-group"><label>Capital</label><input name="capital" class="form-control" value="{{ old('capital') }}" maxlength="100"></div>
             <div class="col-md-4 form-group"><label>Currency</label><input name="currency" class="form-control text-uppercase" value="{{ old('currency') }}" maxlength="20"></div>
+            <div class="col-md-8 form-group"><label>Languages</label><input name="languages" class="form-control" value="{{ old('languages') }}" maxlength="500" placeholder="Indonesian, English"></div>
             <div class="col-md-4 form-group"><label>Population</label><input type="number" min="0" name="population" class="form-control" value="{{ old('population') }}"></div>
             <div class="col-md-3 form-group"><label>Latitude</label><input type="number" step="0.0000001" min="-90" max="90" name="latitude" class="form-control" value="{{ old('latitude') }}"></div>
             <div class="col-md-3 form-group"><label>Longitude</label><input type="number" step="0.0000001" min="-180" max="180" name="longitude" class="form-control" value="{{ old('longitude') }}"></div>

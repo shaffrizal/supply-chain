@@ -40,4 +40,23 @@ class ArticleController extends Controller
         return redirect()->route('admin.articles.index')
                          ->with('success', 'Intelligence brief successfully broadcasted.');
     }
+
+    public function update(Request $request, Article $article)
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string', 'max:100'],
+            'content' => ['required', 'string'],
+        ]);
+        $article->update([...$validated, 'author' => auth()->user()->name]);
+
+        return back()->with('success', 'Intelligence brief successfully updated.');
+    }
+
+    public function destroy(Article $article)
+    {
+        $article->delete();
+
+        return back()->with('success', 'Intelligence brief successfully deleted.');
+    }
 }

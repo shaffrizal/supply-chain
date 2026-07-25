@@ -74,6 +74,12 @@
                     value="{{ old('currency',$country->currency) }}">
             </div>
 
+            <div class="form-group">
+                <label>Bahasa (pisahkan dengan koma)</label>
+                <input type="text" name="languages" class="form-control"
+                    value="{{ old('languages', implode(', ', $country->languages ?? [])) }}">
+            </div>
+
         </div>
 
         <div class="card-footer">

@@ -143,8 +143,8 @@
         </td>
         <td class="text-center align-middle">
             <div class="btn-group">
-                <button class="btn btn-sm btn-outline-info" title="Edit Profile"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-sm btn-outline-danger" title="Revoke Access"><i class="fas fa-ban"></i></button>
+                <button class="btn btn-sm btn-outline-info" title="Edit Profile" data-bs-toggle="modal" data-bs-target="#editUser{{ $user->id }}"><i class="fas fa-edit"></i></button>
+                @if(auth()->id() !== $user->id)<form method="POST" action="{{ route('admin.users.destroy',$user) }}" onsubmit="return confirm('Revoke this user access?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger" title="Revoke Access"><i class="fas fa-ban"></i></button></form>@endif
             </div>
         </td>
     </tr>
@@ -220,4 +220,10 @@
         </div>
     </div>
 </div>
+@foreach($users as $user)
+<div class="modal fade" id="editUser{{ $user->id }}" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><form class="modal-content" method="POST" action="{{ route('admin.users.update',$user) }}">@csrf @method('PUT')
+<div class="modal-header"><h5 class="modal-title">Edit {{ $user->name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><div class="form-group"><label>Name</label><input class="form-control" name="name" value="{{ $user->name }}" required></div><div class="form-group"><label>Email</label><input class="form-control" type="email" name="email" value="{{ $user->email }}" required></div><div class="row"><div class="col-md-6 form-group"><label>Role</label><select class="form-control" name="role">@foreach(['Admin','Analyst','Operator','Viewer'] as $role)<option @selected($user->role===$role)>{{ $role }}</option>@endforeach</select></div><div class="col-md-6 form-group"><label>Department</label><input class="form-control" name="department" value="{{ $user->department }}" required></div></div><div class="form-group"><label>New password (optional)</label><input class="form-control" type="password" name="password" minlength="8"></div></div>
+<div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save Changes</button></div></form></div></div>
+@endforeach
 @stop

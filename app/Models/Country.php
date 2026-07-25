@@ -16,10 +16,15 @@ class Country extends Model
         'flag',
 
         'currency',
+        'languages',
 
         'exchange_rate',
 
         'gdp',
+        'inflation_rate',
+        'exports_value',
+        'imports_value',
+        'economic_data_year',
 
         'population',
 
@@ -34,6 +39,16 @@ class Country extends Model
         'longitude'
 
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'languages' => 'array',
+            'inflation_rate' => 'float',
+            'exports_value' => 'float',
+            'imports_value' => 'float',
+        ];
+    }
 
     /**
      * One Country -> Many Ports

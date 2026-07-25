@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Article;
 use App\Models\Country;
 use App\Models\NewsCache;
 use App\Models\Port;
@@ -184,9 +185,14 @@ class ProjectReadinessTest extends TestCase
             ->assertSee('30 countries available')
             ->assertSee('Economy 1')
             ->assertSee('Economy 30')
+            ->assertSee('Exports')
+            ->assertSee('Imports')
             ->assertSee('https://flagcdn.com/w80/', false);
 
-        Http::assertSentCount(2);
+        Http::assertSentCount(4);
+        foreach (['NY.GDP.MKTP.CD', 'FP.CPI.TOTL.ZG', 'NE.EXP.GNFS.CD', 'NE.IMP.GNFS.CD'] as $indicator) {
+            Http::assertSent(fn ($request) => str_contains($request->url(), $indicator));
+        }
     }
 
     public function test_external_weather_failure_keeps_directory_and_map_available(): void
@@ -233,6 +239,40 @@ class ProjectReadinessTest extends TestCase
         $this->get(route('news.index'))
             ->assertOk()
             ->assertSee('Cached logistics intelligence');
+    }
+
+    public function test_admin_can_update_and_delete_users_and_articles(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin);
+        $user = User::factory()->create(['role' => 'Viewer', 'department' => 'Operations']);
+
+        $this->put(route('admin.users.update', $user), [
+            'name' => 'Updated Viewer',
+            'email' => 'updated-viewer@example.test',
+            'role' => 'Analyst',
+            'department' => 'Risk',
+            'password' => '',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Updated Viewer', 'role' => 'Analyst']);
+
+        $article = Article::create([
+            'title' => 'Initial brief',
+            'category' => 'Logistics',
+            'content' => 'Initial content',
+            'author' => $admin->name,
+        ]);
+        $this->put(route('admin.articles.update', $article), [
+            'title' => 'Updated brief',
+            'category' => 'Trade',
+            'content' => 'Updated content',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('articles', ['id' => $article->id, 'title' => 'Updated brief']);
+
+        $this->delete(route('admin.articles.destroy', $article))->assertRedirect();
+        $this->delete(route('admin.users.destroy', $user))->assertRedirect();
+        $this->assertDatabaseMissing('articles', ['id' => $article->id]);
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
     }
 
     public function test_risk_trend_is_calculated_from_persisted_snapshots(): void

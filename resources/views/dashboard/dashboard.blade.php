@@ -47,6 +47,7 @@
                     <div class="di-profile-tabs"><a class="active" href="{{ $selectedCountry ? route('countries.show', $selectedCountry) : route('countries.index') }}">Overview</a><a href="{{ route('economy.index') }}">Economy</a><a href="{{ route('weather.index') }}">Weather</a><a href="{{ route('exchange.index') }}">Currency</a><a href="{{ route('ports.index') }}">Ports</a></div>
                     <div class="di-profile-metrics">
                         <div><span>GDP (NOMINAL)</span><strong>{{ $selectedCountry?->gdp ? '$'.number_format($selectedCountry->gdp/1000000000000,2).'T' : '—' }}</strong><small>Latest available</small></div>
+                        <div><span>INFLATION</span><strong>{{ $selectedCountry?->inflation_rate !== null ? number_format($selectedCountry->inflation_rate,2).'%' : '—' }}</strong><small>World Bank latest</small></div>
                         <div><span>POPULATION</span><strong>{{ $selectedCountry?->population ? number_format($selectedCountry->population/1000000,1).'M' : '—' }}</strong><small>{{ $selectedCountry?->region }}</small></div>
                         <div><span>CURRENCY</span><strong>{{ $selectedCountry?->currency ?: '—' }}</strong><small>National currency</small></div>
                         <div><span>WEATHER NOW</span><strong>{{ isset($current['temperature_2m'])?round($current['temperature_2m']).'°C':'—' }}</strong><small>{{ $weatherLabel }}</small></div>

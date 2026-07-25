@@ -15,6 +15,8 @@ class WorldBankController extends Controller
         'inflation' => 'FP.CPI.TOTL.ZG',
         'growth' => 'NY.GDP.MKTP.KD.ZG',
         'trade' => 'NE.TRD.GNFS.ZS',
+        'exports' => 'NE.EXP.GNFS.CD',
+        'imports' => 'NE.IMP.GNFS.CD',
     ];
 
     public function index(Request $request)
@@ -36,11 +38,15 @@ class WorldBankController extends Controller
                 'flag' => $country->flag,
                 'region' => $country->region,
                 'gdp' => $country->gdp !== null ? (float) $country->gdp : null,
-                'gdp_year' => null,
+                'gdp_year' => $country->economic_data_year,
                 'population' => $country->population !== null ? (float) $country->population : null,
                 'population_year' => null,
-                'inflation' => null,
-                'inflation_year' => null,
+                'inflation' => $country->inflation_rate,
+                'inflation_year' => $country->economic_data_year,
+                'exports' => $country->exports_value,
+                'exports_year' => $country->economic_data_year,
+                'imports' => $country->imports_value,
+                'imports_year' => $country->economic_data_year,
                 'growth' => null,
                 'growth_year' => null,
                 'trade' => null,
@@ -61,6 +67,41 @@ class WorldBankController extends Controller
         $inflationTrend = $trendCode !== ''
             ? $this->history($trendCode, self::INDICATORS['inflation'])
             : [];
+        $exportTrend = $trendCode !== ''
+            ? $this->history($trendCode, self::INDICATORS['exports'])
+            : [];
+        $importTrend = $trendCode !== ''
+            ? $this->history($trendCode, self::INDICATORS['imports'])
+            : [];
+
+        if ($trendCode !== '') {
+            $latest = [
+                'gdp' => collect($gdpTrend)->last(),
+                'inflation' => collect($inflationTrend)->last(),
+                'exports' => collect($exportTrend)->last(),
+                'imports' => collect($importTrend)->last(),
+            ];
+            $selected = $countries->firstWhere('country_code', $trendCode);
+            if ($selected) {
+                $selected->update([
+                    'gdp' => data_get($latest, 'gdp.value', $selected->gdp),
+                    'inflation_rate' => data_get($latest, 'inflation.value', $selected->inflation_rate),
+                    'exports_value' => data_get($latest, 'exports.value', $selected->exports_value),
+                    'imports_value' => data_get($latest, 'imports.value', $selected->imports_value),
+                    'economic_data_year' => data_get($latest, 'gdp.year', $selected->economic_data_year),
+                ]);
+                $economyData = $economyData->map(function (array $row) use ($selected): array {
+                    if ($row['code'] !== $selected->country_code) return $row;
+                    return [...$row,
+                        'gdp' => $selected->gdp,
+                        'inflation' => $selected->inflation_rate,
+                        'exports' => $selected->exports_value,
+                        'imports' => $selected->imports_value,
+                        'gdp_year' => $selected->economic_data_year,
+                    ];
+                });
+            }
+        }
 
         return view('economy.index', [
             'economyData' => $economyData,
@@ -74,6 +115,8 @@ class WorldBankController extends Controller
             'trendCountries' => $trendCountries,
             'gdpTrend' => $gdpTrend,
             'inflationTrend' => $inflationTrend,
+            'exportTrend' => $exportTrend,
+            'importTrend' => $importTrend,
         ]);
     }
 

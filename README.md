@@ -21,7 +21,7 @@ Platform analisis risiko rantai pasok global berbasis Laravel 12. Aplikasi mengg
 - PHP 8.2 dan Laravel 12
 - MySQL untuk pengembangan; SQLite in-memory untuk pengujian
 - Bootstrap 5.3, Chart.js, dan Leaflet
-- REST Countries, Open-Meteo, RainViewer, World Bank, ExchangeRate API, dan NewsAPI
+- REST Countries, Open-Meteo, RainViewer, World Bank, ExchangeRate API, dan GNews (dengan NewsAPI sebagai fallback opsional)
 
 ## Instalasi
 
@@ -50,7 +50,7 @@ Panel admin berada di `/login`. Akun awal dari seeder menggunakan `zalhom@gmail.
 Tambahkan nilai berikut ke `.env` bila tersedia:
 
 ```env
-OPENWEATHER_API_KEY=
+GNEWS_API_KEY=
 NEWS_API_KEY=
 ```
 
@@ -72,7 +72,7 @@ Seluruh halaman utama dan administrasi menggunakan layout Bootstrap 5.3 native. 
 Seeder utama menghasilkan:
 
 - 250 profil negara
-- 12.000 fasilitas pelabuhan
+- 12.000 fasilitas pelabuhan: 100 pelabuhan sumber utama yang diperkaya terminal/fasilitas simulasi untuk kebutuhan analisis akademik dan demonstrasi skala data. Data simulasi bukan klaim 12.000 pelabuhan dunia yang seluruhnya bersumber dari API eksternal.
 - data awal shipping routes
 
 Untuk memulihkan dataset pengembangan:
@@ -102,7 +102,7 @@ Checklist pengumpulan dan deployment tersedia di [`SUBMISSION_CHECKLIST.md`](SUB
 
 ### Scheduler risk trend 90 hari
 
-`risk:update` dijadwalkan setiap hari pukul 01.00 menggunakan zona waktu `Asia/Jakarta`. Setiap negara hanya mempunyai satu snapshot per tanggal; eksekusi ulang pada hari yang sama memperbarui snapshot tersebut dan data yang lebih tua dari 90 hari otomatis dibersihkan.
+`risk:update` dijadwalkan setiap hari pukul 01.00 menggunakan zona waktu `Asia/Jakarta`. Kondisi cuaca scheduler berasal dari Open-Meteo. Setiap negara hanya mempunyai satu snapshot per tanggal; eksekusi ulang pada hari yang sama memperbarui snapshot tersebut dan data yang lebih tua dari 90 hari otomatis dibersihkan.
 
 Jalankan migrasi terbaru terlebih dahulu:
 

@@ -863,6 +863,22 @@
 
 </div>
 
+<div class="card shadow mb-4">
+    <div class="card-header bg-primary text-white"><i class="fas fa-satellite-dish mr-2"></i>Live Economic, Weather & Currency Comparison</div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered align-middle mb-0">
+            <thead><tr><th>Indicator</th><th>{{ $country1->country_name }}</th><th>{{ $country2->country_name }}</th></tr></thead>
+            <tbody>
+                <tr><th>Inflation</th><td>{{ data_get($comparisonInsights,$country1->id.'.inflation') !== null ? number_format(data_get($comparisonInsights,$country1->id.'.inflation'),2).'%' : 'Unavailable' }}</td><td>{{ data_get($comparisonInsights,$country2->id.'.inflation') !== null ? number_format(data_get($comparisonInsights,$country2->id.'.inflation'),2).'%' : 'Unavailable' }}</td></tr>
+                <tr><th>Weather</th><td>{{ data_get($comparisonInsights,$country1->id.'.temperature') !== null ? number_format(data_get($comparisonInsights,$country1->id.'.temperature'),1).'°C' : 'Unavailable' }} · {{ data_get($comparisonInsights,$country1->id.'.weather_risk','Unknown') }}</td><td>{{ data_get($comparisonInsights,$country2->id.'.temperature') !== null ? number_format(data_get($comparisonInsights,$country2->id.'.temperature'),1).'°C' : 'Unavailable' }} · {{ data_get($comparisonInsights,$country2->id.'.weather_risk','Unknown') }}</td></tr>
+                <tr><th>Currency per USD</th><td>{{ data_get($comparisonInsights,$country1->id.'.currency','—') }} {{ data_get($comparisonInsights,$country1->id.'.exchange_rate') !== null ? number_format(data_get($comparisonInsights,$country1->id.'.exchange_rate'),4) : 'Unavailable' }}</td><td>{{ data_get($comparisonInsights,$country2->id.'.currency','—') }} {{ data_get($comparisonInsights,$country2->id.'.exchange_rate') !== null ? number_format(data_get($comparisonInsights,$country2->id.'.exchange_rate'),4) : 'Unavailable' }}</td></tr>
+                <tr><th>Exports</th><td>{{ data_get($comparisonInsights,$country1->id.'.exports') !== null ? '$'.number_format(data_get($comparisonInsights,$country1->id.'.exports')/1e9,2).'B' : 'Unavailable' }}</td><td>{{ data_get($comparisonInsights,$country2->id.'.exports') !== null ? '$'.number_format(data_get($comparisonInsights,$country2->id.'.exports')/1e9,2).'B' : 'Unavailable' }}</td></tr>
+                <tr><th>Imports</th><td>{{ data_get($comparisonInsights,$country1->id.'.imports') !== null ? '$'.number_format(data_get($comparisonInsights,$country1->id.'.imports')/1e9,2).'B' : 'Unavailable' }}</td><td>{{ data_get($comparisonInsights,$country2->id.'.imports') !== null ? '$'.number_format(data_get($comparisonInsights,$country2->id.'.imports')/1e9,2).'B' : 'Unavailable' }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {{-- ====================================== --}}
 {{-- BAR CHART --}}
 {{-- ====================================== --}}

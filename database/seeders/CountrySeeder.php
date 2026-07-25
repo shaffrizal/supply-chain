@@ -27,6 +27,7 @@ class CountrySeeder extends Seeder
                     'country_name' => $item['name']['common'],
                     'flag' => $item['flag'] ?? null,
                     'currency' => $currency,
+                    'languages' => array_values($item['languages'] ?? []),
                     'population' => $item['population'] ?? null,
                     'region' => $item['region'] ?: 'Other',
                     'capital' => $item['capital'][0] ?? null,

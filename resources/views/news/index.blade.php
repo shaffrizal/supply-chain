@@ -11,7 +11,7 @@
         </div>
         <div class="news-live-badge">
             <span class="news-live-dot"></span>
-            {{ $apiAvailable ? 'Live intelligence' : 'Cached intelligence' }}
+            {{ $apiAvailable ? $providerName.' live' : 'Cached intelligence' }}
         </div>
     </div>
 @stop

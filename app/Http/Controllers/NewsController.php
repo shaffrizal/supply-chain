@@ -27,33 +27,61 @@ class NewsController extends Controller
         $topic = array_key_exists($topic, $topics) ? $topic : 'supply chain';
         $search = trim($request->string('search')->value());
         $keyword = $search !== '' ? Str::limit($search, 100, '') : $topic;
-        $apiKey = config('services.newsapi.key', env('NEWS_API_KEY'));
+        $gnewsKey = config('services.gnews.key');
+        $newsApiKey = config('services.newsapi.key');
+        $providerName = filled($gnewsKey) ? 'GNews' : 'NewsAPI fallback';
         $providerTotal = 0;
         $apiAvailable = false;
 
         try {
             $payload = Cache::remember(
-                'news-intelligence.'.sha1(Str::lower($keyword)),
+                'news-intelligence.v2.'.sha1(Str::lower($keyword)),
                 now()->addMinutes(20),
-                function () use ($apiKey, $keyword) {
-                    if (blank($apiKey)) {
+                function () use ($gnewsKey, $newsApiKey, $keyword) {
+                    if (filled($gnewsKey)) {
+                        $response = Http::connectTimeout(3)->timeout(10)->retry(1, 250)
+                            ->get('https://gnews.io/api/v4/search', [
+                                'q' => $keyword,
+                                'lang' => 'en',
+                                'max' => 10,
+                                'sortby' => 'publishedAt',
+                                'apikey' => $gnewsKey,
+                            ]);
+
+                        if ($response->successful()) {
+                            $payload = $response->json();
+                            $payload['provider'] = 'GNews';
+
+                            return $payload;
+                        }
+                    }
+
+                    if (blank($newsApiKey)) {
                         return null;
                     }
 
-                    $response = Http::timeout(12)->retry(2, 250)->get('https://newsapi.org/v2/everything', [
+                    $response = Http::connectTimeout(3)->timeout(10)->retry(1, 250)->get('https://newsapi.org/v2/everything', [
                         'q' => $keyword,
                         'language' => 'en',
                         'sortBy' => 'publishedAt',
                         'pageSize' => 24,
-                        'apiKey' => $apiKey,
+                        'apiKey' => $newsApiKey,
                     ]);
 
-                    return $response->successful() ? $response->json() : null;
+                    if (! $response->successful()) {
+                        return null;
+                    }
+
+                    $payload = $response->json();
+                    $payload['provider'] = 'NewsAPI fallback';
+
+                    return $payload;
                 }
             );
 
-            $apiAvailable = is_array($payload) && ($payload['status'] ?? null) === 'ok';
-            $providerTotal = (int) ($payload['totalResults'] ?? 0);
+            $providerName = $payload['provider'] ?? $providerName;
+            $apiAvailable = is_array($payload) && isset($payload['articles']);
+            $providerTotal = (int) ($payload['totalArticles'] ?? $payload['totalResults'] ?? 0);
             $articles = collect($payload['articles'] ?? []);
         } catch (Throwable) {
             $articles = collect();
@@ -62,6 +90,7 @@ class NewsController extends Controller
         $articles = $articles
             ->filter(fn (array $article) => filled($article['title'] ?? null) && filled($article['url'] ?? null))
             ->map(function (array $article) use ($sentimentService, $keyword) {
+                $article['urlToImage'] = $article['urlToImage'] ?? $article['image'] ?? null;
                 $analysis = $sentimentService->analyze(
                     trim(($article['title'] ?? '').' '.($article['description'] ?? ''))
                 );
@@ -140,6 +169,7 @@ class NewsController extends Controller
             'topSources',
             'dominantSentiment',
             'apiAvailable'
+            ,'providerName'
         ));
     }
 }

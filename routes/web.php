@@ -159,11 +159,9 @@ Route::prefix('admin')
         Route::get('/ports', [AdminDashboardController::class, 'ports'])->name('ports.index');
         Route::resource('ports', PortController::class)->only(['create', 'store', 'edit', 'update', 'destroy']);
 
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::resource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
 
-        Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
-        Route::post('/articles', [ArticleController::class, 'store'])->name('articles.store');
+        Route::resource('articles', ArticleController::class)->only(['index', 'store', 'update', 'destroy']);
 
         Route::get('/settings', [AdminDashboardController::class, 'settings'])
             ->name('settings');

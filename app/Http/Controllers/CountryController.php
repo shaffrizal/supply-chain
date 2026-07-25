@@ -50,7 +50,7 @@ public function importApi()
 {
     try {
         $response = Http::connectTimeout(3)->timeout(15)->get('https://restcountries.com/v3.1/all', [
-            'fields' => 'name,cca2,region,capital,currencies,population,latlng,flag',
+            'fields' => 'name,cca2,region,capital,currencies,languages,population,latlng,flag',
         ]);
     } catch (\Throwable) {
         return redirect()->route('countries.index')->with('error', 'REST Countries API is temporarily unavailable. Existing data remains safe.');
@@ -63,6 +63,7 @@ public function importApi()
         Country::updateOrCreate(['country_code' => $item['cca2']], [
             'country_name' => $item['name']['common'], 'region' => $item['region'] ?: null,
             'capital' => $item['capital'][0] ?? null, 'currency' => $currency,
+            'languages' => array_values($item['languages'] ?? []),
             'population' => $item['population'] ?? null, 'flag' => $item['flag'] ?? null,
             'latitude' => $item['latlng'][0] ?? null, 'longitude' => $item['latlng'][1] ?? null,
         ]);
@@ -99,6 +100,7 @@ public function importApi()
             'capital' => 'nullable|string|max:100',
 
             'currency' => 'nullable|string|max:20',
+            'languages' => 'nullable|string|max:500',
 
             'population' => 'nullable|integer|min:0',
 
@@ -123,6 +125,7 @@ Country::create([
     'capital' => $request->capital,
 
     'currency' => $request->currency ? strtoupper($request->currency) : null,
+    'languages' => $this->parseLanguages($request->input('languages')),
 
     'population' => $request->population,
 
@@ -356,6 +359,7 @@ Country::create([
 
             'currency' =>
                 'nullable|string|max:20',
+            'languages' => 'nullable|string|max:500',
 
             'population' =>
                 'nullable|integer|min:0',
@@ -379,6 +383,7 @@ Country::create([
             'capital' => $request->capital,
 
             'currency' => $request->currency ? strtoupper($request->currency) : null,
+            'languages' => $this->parseLanguages($request->input('languages')),
 
             'population' => $request->population,
 
@@ -422,6 +427,16 @@ Country::create([
                 'Country deleted successfully.'
 
             );
+    }
+
+    private function parseLanguages(?string $languages): array
+    {
+        return collect(explode(',', (string) $languages))
+            ->map(fn (string $language) => trim($language))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
 }
