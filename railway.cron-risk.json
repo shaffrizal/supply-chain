@@ -1,0 +1,14 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK"
+  },
+  "deploy": {
+    "preDeployCommand": [
+      "php artisan migrate --force --no-interaction"
+    ],
+    "startCommand": "php artisan risk:update --no-interaction",
+    "cronSchedule": "0 18 * * *",
+    "restartPolicyType": "NEVER"
+  }
+}
