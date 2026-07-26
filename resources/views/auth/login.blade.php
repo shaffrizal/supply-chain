@@ -25,7 +25,7 @@
         .remember{display:flex;align-items:center;gap:7px;margin:3px 0 18px;color:var(--muted);font-size:10px}
         .login-button{width:100%;height:44px;border:0;border-radius:9px;background:linear-gradient(135deg,var(--blue),#0f5ac5);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 9px 23px rgba(22,132,255,.25)}
         .login-button:hover{filter:brightness(1.08)}.login-error{display:flex;gap:8px;margin-bottom:15px;padding:10px;border:1px solid #6c2931;border-radius:8px;background:#32171d;color:#ff9299;font-size:10px}
-        .back-link{display:block;margin-top:18px;color:#66839e;font-size:10px;text-align:center;text-decoration:none}.back-link:hover{color:#6db6ff}
+        .back-link{display:block;margin-top:18px;color:#6db6ff;font-size:10px;text-align:center;text-decoration:none}.back-link:hover{color:#9bd0ff}
         .security-note{display:flex;gap:9px;margin-top:20px;padding-top:16px;border-top:1px solid #183149;color:#607992;font-size:9px;line-height:1.5}.security-note i{color:#43d58a}
         @media(max-width:850px){.auth-shell{grid-template-columns:1fr}.auth-brand{display:none}.auth-panel{border:0;padding:20px}}
     </style>
@@ -56,7 +56,7 @@
             <div class="field"><label for="password">Password</label><div><i class="fas fa-lock"></i><input id="password" type="password" name="password" autocomplete="current-password" required></div></div>
             <label class="remember"><input type="checkbox" name="remember" value="1"> Keep me signed in on this device</label>
             <button class="login-button" type="submit"><i class="fas fa-sign-in-alt"></i> Sign in securely</button>
-            <a class="back-link" href="{{ route('dashboard') }}"><i class="fas fa-arrow-left"></i> Return to dashboard</a>
+            <a class="back-link" href="{{ route('register') }}"><i class="fas fa-user-plus"></i> New to the platform? Create an account</a>
             <div class="security-note"><i class="fas fa-shield-alt"></i><span>Permissions follow your assigned role. Administrative data changes remain restricted to administrators.</span></div>
         </form>
     </section>

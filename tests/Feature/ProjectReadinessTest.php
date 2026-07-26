@@ -25,6 +25,7 @@ class ProjectReadinessTest extends TestCase
 {
     public function test_bootstrap_five_shell_replaces_adminlte_runtime(): void
     {
+        $this->actingAs($this->user());
         $response = $this->get(route('dashboard'));
 
         $response->assertOk()
@@ -65,6 +66,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_primary_pages_are_available(): void
     {
+        $this->actingAs($this->user());
         foreach (['/', '/countries', '/ports', '/shipping-routes', '/watchlists', '/weather', '/weather-map', '/exchange-rate', '/economy', '/news', '/risk-score', '/map', '/comparison'] as $uri) {
             $this->get($uri)->assertOk();
         }
@@ -129,6 +131,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_country_directory_uses_professional_orbital_background(): void
     {
+        $this->actingAs($this->user());
         $this->assertFileExists(public_path('images/country-intelligence-background-v2.png'));
 
         $this->get(route('countries.index'))
@@ -173,6 +176,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_economy_dashboard_covers_all_countries_in_the_dataset(): void
     {
+        $this->actingAs($this->user());
         foreach (range(1, 30) as $index) {
             Country::create([
                 'country_name' => "Economy $index",
@@ -198,6 +202,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_external_weather_failure_keeps_directory_and_map_available(): void
     {
+        $this->actingAs($this->user());
         Cache::flush();
         Country::create(['country_name' => 'Indonesia', 'country_code' => 'ID', 'latitude' => -6.2, 'longitude' => 106.8]);
         $factory = new HttpFactory;
@@ -210,6 +215,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_world_bank_failure_keeps_all_database_countries_visible(): void
     {
+        $this->actingAs($this->user());
         Cache::flush();
         Country::create(['country_name' => 'Indonesia', 'country_code' => 'ID', 'region' => 'Asia']);
         $factory = new HttpFactory;
@@ -224,6 +230,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_news_failure_uses_persisted_cache(): void
     {
+        $this->actingAs($this->user());
         Cache::flush();
         config(['services.newsapi.key' => 'test-key']);
         NewsCache::create([
@@ -332,6 +339,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_weather_dashboard_provides_searchable_country_conditions(): void
     {
+        $this->actingAs($this->user());
         Country::create(['country_name' => 'Indonesia', 'country_code' => 'ID', 'capital' => 'Jakarta', 'latitude' => -6.2, 'longitude' => 106.8]);
         Country::create(['country_name' => 'Japan', 'country_code' => 'JP', 'capital' => 'Tokyo', 'latitude' => 35.6, 'longitude' => 139.6]);
 
@@ -362,6 +370,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_report_center_and_printable_operational_reports_are_available(): void
     {
+        $this->actingAs($this->user());
         Country::create([
             'country_name' => 'Indonesia',
             'country_code' => 'ID',
@@ -421,6 +430,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_watchlist_supports_ajax_and_enforces_session_ownership(): void
     {
+        $this->actingAs($this->user());
         $this->withSession(['watchlist_session_started' => true]);
         $country = Country::create(['country_name' => 'Indonesia', 'country_code' => 'ID']);
         $response = $this->postJson(route('watchlists.store', $country));
@@ -464,6 +474,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_geospatial_runtime_exists_only_on_map_pages(): void
     {
+        $this->actingAs($this->user());
         foreach (['/', '/countries', '/ports', '/shipping-routes'] as $uri) {
             $this->get($uri)->assertOk()->assertDontSee('leaflet.js', false);
         }
@@ -489,6 +500,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_legacy_adminlte_and_bootstrap_four_assets_are_removed(): void
     {
+        $this->actingAs($this->user());
         $this->assertFileDoesNotExist(public_path('vendor/adminlte'));
         $this->assertFileDoesNotExist(public_path('vendor/bootstrap'));
         $this->assertFileDoesNotExist(resource_path('views/vendor/adminlte/page.blade.php'));
@@ -518,6 +530,33 @@ class ProjectReadinessTest extends TestCase
         $this->post(route('login.store'), ['email' => 'admin@test.local', 'password' => 'secret-password'])
             ->assertRedirect(route('admin.users.index'));
         $this->assertAuthenticated();
+    }
+
+    public function test_guests_are_redirected_to_login_before_opening_the_platform(): void
+    {
+        foreach (['/', '/countries', '/ports', '/economy', '/news', '/risk-score', '/reports', '/map'] as $uri) {
+            $this->get($uri)->assertRedirect(route('login'));
+        }
+
+        $this->get(route('login'))->assertOk()->assertSee('Create an account');
+        $this->get(route('register'))->assertOk()->assertSee('Create user account');
+    }
+
+    public function test_public_registration_creates_an_active_standard_user(): void
+    {
+        $this->post(route('register.store'), [
+            'name' => 'New Platform User',
+            'email' => 'new.user@example.com',
+            'password' => 'SecurePass123',
+            'password_confirmation' => 'SecurePass123',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticated();
+        $user = User::where('email', 'new.user@example.com')->firstOrFail();
+        $this->assertSame('User', $user->role);
+        $this->assertSame('Active', $user->status);
+        $this->assertNotNull($user->last_login_at);
+        $this->get(route('admin.users.index'))->assertForbidden();
     }
 
     public function test_non_admin_user_can_login_but_cannot_access_admin_routes(): void
@@ -560,6 +599,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_report_csv_export_is_available_and_restricted_reports_require_admin(): void
     {
+        $this->actingAs($this->user());
         $this->get(route('reports.export', 'risk'))
             ->assertOk()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8');
@@ -573,6 +613,7 @@ class ProjectReadinessTest extends TestCase
 
     public function test_display_language_can_be_changed_and_is_persisted_in_session(): void
     {
+        $this->actingAs($this->user());
         $this->from(route('dashboard'))
             ->post(route('language.update', 'en'))
             ->assertRedirect(route('dashboard'))
@@ -601,6 +642,14 @@ class ProjectReadinessTest extends TestCase
         return User::firstOrCreate(['email' => $email], [
             'name' => 'Admin', 'password' => 'secret-password',
             'role' => 'Admin', 'department' => 'IT',
+        ]);
+    }
+
+    private function user(string $email = 'user@test.local'): User
+    {
+        return User::firstOrCreate(['email' => $email], [
+            'name' => 'Platform User', 'password' => 'Secret-password1',
+            'role' => 'User', 'department' => 'Operations', 'status' => 'Active',
         ]);
     }
 }
