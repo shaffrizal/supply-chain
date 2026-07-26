@@ -6,6 +6,7 @@ use App\Models\Country;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class WorldBankBatchSyncService
 {
@@ -24,10 +25,22 @@ class WorldBankBatchSyncService
         $iso3ToIso2 = $this->iso3ToIso2();
         $updates = [];
         $coverage = [];
+        $errors = [];
 
         foreach (self::INDICATORS as $name => $indicator) {
-            $rows = $this->latestObservations($indicator['code'], $fresh);
             $coverage[$name] = 0;
+
+            try {
+                $rows = $this->latestObservations($indicator['code'], $fresh);
+            } catch (Throwable $exception) {
+                $errors[$name] = $exception->getMessage();
+
+                if ($progress) {
+                    $progress($name, 0);
+                }
+
+                continue;
+            }
 
             foreach ($rows as $row) {
                 $iso2 = $iso3ToIso2[strtoupper((string) ($row['countryiso3code'] ?? ''))] ?? null;
@@ -45,6 +58,10 @@ class WorldBankBatchSyncService
             }
         }
 
+        if ($updates === []) {
+            throw new RuntimeException('World Bank did not return usable data for any indicator.');
+        }
+
         $updatedCountries = 0;
         foreach (array_chunk($updates, 50, true) as $chunk) {
             foreach ($chunk as $iso2 => $values) {
@@ -58,10 +75,15 @@ class WorldBankBatchSyncService
         Cache::put('world-bank.sync.summary', [
             'countries' => $updatedCountries,
             'coverage' => $coverage,
+            'errors' => $errors,
             'synced_at' => now()->toIso8601String(),
         ], now()->addDays(7));
 
-        return ['countries' => $updatedCountries, 'coverage' => $coverage];
+        return [
+            'countries' => $updatedCountries,
+            'coverage' => $coverage,
+            'errors' => $errors,
+        ];
     }
 
     private function latestObservations(string $indicator, bool $fresh): array
@@ -77,6 +99,7 @@ class WorldBankBatchSyncService
                     'format' => 'json',
                     'mrnev' => 1,
                     'per_page' => 500,
+                    'source' => 2,
                 ]);
 
             if (! $response->successful()) {

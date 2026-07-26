@@ -29,6 +29,10 @@ class SyncWorldBankIndicators extends Command
         $this->newLine();
         $this->info("Synchronization complete: {$result['countries']} database countries updated.");
 
+        foreach ($result['errors'] ?? [] as $indicator => $message) {
+            $this->warn("$indicator was skipped: $message");
+        }
+
         return self::SUCCESS;
     }
 }
