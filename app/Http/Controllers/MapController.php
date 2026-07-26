@@ -13,7 +13,7 @@ class MapController extends Controller
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->orderBy('country_name')
-            ->get(['id', 'country_code', 'country_name', 'capital', 'region', 'population', 'latitude', 'longitude', 'risk_index'])
+            ->get(['id', 'country_code', 'country_name', 'flag', 'capital', 'region', 'population', 'latitude', 'longitude', 'risk_index'])
             ->map(function (Country $country) {
                 $score = max(0, min(100, (float) $country->risk_index));
                 $level = $score >= 70 ? 'High' : ($score >= 40 ? 'Medium' : 'Low');
@@ -22,6 +22,7 @@ class MapController extends Controller
                     'id' => $country->id,
                     'code' => strtoupper($country->country_code),
                     'name' => $country->country_name,
+                    'flag' => $country->flag ?: '🏳️',
                     'capital' => $country->capital ?: '—',
                     'region' => $country->region ?: 'Global',
                     'population' => (int) $country->population,

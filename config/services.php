@@ -47,4 +47,8 @@ return [
         'key' => env('GNEWS_API_KEY'),
     ],
 
+    'risk' => [
+        'refresh_after_seed' => env('SEED_REFRESH_RISK_SCORES', false),
+    ],
+
 ];

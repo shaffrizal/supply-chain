@@ -29,7 +29,7 @@ class NewsController extends Controller
         $keyword = $search !== '' ? Str::limit($search, 100, '') : $topic;
         $gnewsKey = config('services.gnews.key');
         $newsApiKey = config('services.newsapi.key');
-        $providerName = filled($gnewsKey) ? 'GNews' : 'NewsAPI fallback';
+        $providerName = filled($newsApiKey) ? 'NewsAPI' : 'GNews fallback';
         $providerTotal = 0;
         $apiAvailable = false;
 
@@ -38,6 +38,23 @@ class NewsController extends Controller
                 'news-intelligence.v2.'.sha1(Str::lower($keyword)),
                 now()->addMinutes(20),
                 function () use ($gnewsKey, $newsApiKey, $keyword) {
+                    if (filled($newsApiKey)) {
+                        $response = Http::connectTimeout(3)->timeout(10)->retry(1, 250)->get('https://newsapi.org/v2/everything', [
+                            'q' => $keyword,
+                            'language' => 'en',
+                            'sortBy' => 'publishedAt',
+                            'pageSize' => 24,
+                            'apiKey' => $newsApiKey,
+                        ]);
+
+                        if ($response->successful()) {
+                            $payload = $response->json();
+                            $payload['provider'] = 'NewsAPI';
+
+                            return $payload;
+                        }
+                    }
+
                     if (filled($gnewsKey)) {
                         $response = Http::connectTimeout(3)->timeout(10)->retry(1, 250)
                             ->get('https://gnews.io/api/v4/search', [
@@ -50,32 +67,13 @@ class NewsController extends Controller
 
                         if ($response->successful()) {
                             $payload = $response->json();
-                            $payload['provider'] = 'GNews';
+                            $payload['provider'] = 'GNews fallback';
 
                             return $payload;
                         }
                     }
 
-                    if (blank($newsApiKey)) {
-                        return null;
-                    }
-
-                    $response = Http::connectTimeout(3)->timeout(10)->retry(1, 250)->get('https://newsapi.org/v2/everything', [
-                        'q' => $keyword,
-                        'language' => 'en',
-                        'sortBy' => 'publishedAt',
-                        'pageSize' => 24,
-                        'apiKey' => $newsApiKey,
-                    ]);
-
-                    if (! $response->successful()) {
-                        return null;
-                    }
-
-                    $payload = $response->json();
-                    $payload['provider'] = 'NewsAPI fallback';
-
-                    return $payload;
+                    return null;
                 }
             );
 

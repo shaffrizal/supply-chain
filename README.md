@@ -15,13 +15,19 @@ Platform analisis risiko rantai pasok global berbasis Laravel 12. Aplikasi mengg
 - News intelligence, cache berita, dan analisis sentimen.
 - Risk score serta klasifikasi Low, Medium, dan High.
 - Watchlist, shipping routes, REST API internal, dan panel administrasi.
+- Report Center dengan print-to-PDF browser dan ekspor CSV kompatibel Excel.
+- Manajemen status akun serta pencatatan waktu login terakhir.
+- Rate limiting API publik sebanyak 60 request per menit per client.
+- Pemilih bahasa berbasis session: Indonesia/English diterjemahkan secara native,
+  ditambah bahasa global utama melalui penerjemahan antarmuka otomatis.
 
 ## Teknologi
 
 - PHP 8.2 dan Laravel 12
 - MySQL untuk pengembangan; SQLite in-memory untuk pengujian
 - Bootstrap 5.3, Chart.js, dan Leaflet
-- REST Countries, Open-Meteo, RainViewer, World Bank, ExchangeRate API, dan GNews (dengan NewsAPI sebagai fallback opsional)
+- REST Countries, OpenWeatherMap untuk kondisi detail, Open-Meteo untuk batch/fallback,
+  RainViewer, World Bank, ExchangeRate API, dan NewsAPI (dengan GNews sebagai fallback opsional)
 
 ## Instalasi
 
@@ -79,7 +85,38 @@ Untuk memulihkan dataset pengembangan:
 
 ```bash
 php artisan db:seed --force
+php artisan worldbank:sync --fresh
+php artisan risk:update
 ```
+
+Nilai risiko bawaan seeder hanya data bootstrap agar antarmuka dapat digunakan secara offline.
+Jalankan `risk:update` setelah seeding untuk menggantinya dengan snapshot berbobot dari
+cuaca, inflasi, berita per negara, dan perubahan mata uang. Pada lingkungan dengan akses
+internet, proses ini dapat dijalankan otomatis dengan `SEED_REFRESH_RISK_SCORES=true`.
+
+`worldbank:sync` mengambil GDP, populasi, inflasi, pertumbuhan GDP, trade/GDP,
+ekspor, dan impor secara batch untuk seluruh negara. Hasilnya disimpan di database,
+respons provider di-cache enam jam, dan scheduler menyegarkannya setiap hari pukul 02.00.
+`risk:update` menggunakan indikator hasil sinkronisasi tersebut sehingga tidak mengirim
+ratusan request World Bank tambahan.
+
+## Report Center
+
+Buka `/reports` untuk membuat Executive, Risk, Economy, Port, News, Watchlist,
+Article, atau User report. Gunakan **Generate Report** lalu print browser untuk
+menyimpan PDF, atau **Export CSV** untuk mengunduh data yang dapat dibuka di Excel.
+Report Articles dan Users hanya dapat diakses oleh Admin.
+
+## Menambahkan bahasa
+
+Bahasa yang tersedia didefinisikan di `config/locales.php`. Bahasa Indonesia dan
+English menggunakan kamus native. Bahasa lain menggunakan penerjemahan halaman
+otomatis, dengan brand, identitas akun, kode, angka, dan data teknis yang dilindungi
+dari terjemahan bila diperlukan. Untuk menambah bahasa,
+misalnya Jepang, tambahkan kode `ja` ke konfigurasi lalu buat folder `lang/ja`
+dengan struktur file kamus yang sama seperti `lang/id` dan `lang/en`. Route,
+middleware, penyimpanan session, serta selector navbar akan langsung menggunakan
+bahasa baru tanpa perubahan arsitektur.
 
 ## Pengujian dan pemeriksaan
 

@@ -10,6 +10,35 @@ class WeatherService
 {
     public function getWeather($latitude, $longitude)
     {
+        $openWeatherKey = config('services.openweather.key');
+        if (filled($openWeatherKey)) {
+            try {
+                $response = Http::connectTimeout(3)->timeout(10)->get('https://api.openweathermap.org/data/2.5/weather', [
+                    'lat' => $latitude,
+                    'lon' => $longitude,
+                    'appid' => $openWeatherKey,
+                    'units' => 'metric',
+                ]);
+                if ($response->successful()) {
+                    $data = $response->json();
+
+                    return [
+                        'temperature_2m' => $data['main']['temp'] ?? null,
+                        'relative_humidity_2m' => $data['main']['humidity'] ?? null,
+                        'apparent_temperature' => $data['main']['feels_like'] ?? null,
+                        'precipitation' => $data['rain']['1h'] ?? $data['snow']['1h'] ?? 0,
+                        'surface_pressure' => $data['main']['pressure'] ?? null,
+                        'wind_speed_10m' => isset($data['wind']['speed']) ? round($data['wind']['speed'] * 3.6, 2) : null,
+                        'wind_gusts_10m' => isset($data['wind']['gust']) ? round($data['wind']['gust'] * 3.6, 2) : null,
+                        'weather_code' => $data['weather'][0]['id'] ?? null,
+                        'provider' => 'OpenWeatherMap',
+                    ];
+                }
+            } catch (\Throwable) {
+                // Continue to the keyless Open-Meteo fallback.
+            }
+        }
+
         $url = "https://api.open-meteo.com/v1/forecast";
 
         $response = Http::timeout(10)->get($url, [
@@ -24,7 +53,7 @@ class WeatherService
 
         $data = $response->json();
 
-        return $data['current'] ?? null;
+        return isset($data['current']) ? [...$data['current'], 'provider' => 'Open-Meteo fallback'] : null;
     }
 
     public function globalConditions(Collection $countries): array

@@ -12,14 +12,31 @@ class UserController extends Controller
     /**
      * Menampilkan halaman daftar user.
      */
-  public function index()
-{
-    // Mengambil semua data user dari database
-    $users = User::all();
+    public function index(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $role = in_array($request->input('role'), ['Admin', 'Analyst', 'Operator', 'Viewer'], true)
+            ? $request->input('role') : '';
+        $users = User::query()
+            ->when($search, fn ($query) => $query->where(function ($nested) use ($search) {
+                $nested->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('department', 'like', "%{$search}%");
+            }))
+            ->when($role, fn ($query) => $query->where('role', $role))
+            ->latest()
+            ->get();
 
-    // Kirim variabel $users ke view admin.users.index
-    return view('admin.users.index', compact('users'));
-}
+        return view('admin.users.index', [
+            'users' => $users,
+            'search' => $search,
+            'roleFilter' => $role,
+            'totalUsers' => User::count(),
+            'adminUsers' => User::where('role', 'Admin')->count(),
+            'analystUsers' => User::where('role', 'Analyst')->count(),
+            'departments' => User::whereNotNull('department')->distinct()->count('department'),
+        ]);
+    }
 
     /**
      * Memproses data ketika tombol "Save Operator" diklik.
@@ -33,6 +50,7 @@ class UserController extends Controller
             'password' => 'required|string|min:8',
             'role' => 'required|in:Admin,Analyst,Operator,Viewer',
             'department' => 'required|string|max:100',
+            'status' => 'nullable|in:Active,Inactive',
         ]);
 
         // 2. Simpan data user baru ke database
@@ -42,6 +60,7 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'department' => $request->department,
+            'status' => $request->input('status', 'Active'),
         ]);
 
         // 3. Kembalikan ke halaman daftar user dengan alert sukses
@@ -57,8 +76,10 @@ class UserController extends Controller
             'password' => ['nullable', 'string', 'min:8'],
             'role' => ['required', Rule::in(['Admin', 'Analyst', 'Operator', 'Viewer'])],
             'department' => ['required', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['Active', 'Inactive'])],
         ]);
         if (blank($validated['password'] ?? null)) unset($validated['password']);
+        if (blank($validated['status'] ?? null)) unset($validated['status']);
         $user->update($validated);
 
         return back()->with('success', 'User account successfully updated.');

@@ -22,9 +22,18 @@ class Country extends Model
 
         'gdp',
         'inflation_rate',
+        'gdp_growth',
+        'trade_percentage',
         'exports_value',
         'imports_value',
         'economic_data_year',
+        'population_data_year',
+        'inflation_data_year',
+        'growth_data_year',
+        'trade_data_year',
+        'exports_data_year',
+        'imports_data_year',
+        'world_bank_synced_at',
 
         'population',
 
@@ -45,8 +54,11 @@ class Country extends Model
         return [
             'languages' => 'array',
             'inflation_rate' => 'float',
+            'gdp_growth' => 'float',
+            'trade_percentage' => 'float',
             'exports_value' => 'float',
             'imports_value' => 'float',
+            'world_bank_synced_at' => 'datetime',
         ];
     }
 

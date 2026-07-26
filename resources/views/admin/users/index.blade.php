@@ -49,7 +49,7 @@
             <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">Total Users</span>
-                <span class="info-box-number">12 Operators</span>
+                <span class="info-box-number">{{ number_format($totalUsers) }} Accounts</span>
             </div>
         </div>
     </div>
@@ -57,8 +57,8 @@
         <div class="info-box shadow-sm">
             <span class="info-box-icon bg-success"><i class="fas fa-user-check"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text">Active Now</span>
-                <span class="info-box-number">8 Online</span>
+                <span class="info-box-text">Departments</span>
+                <span class="info-box-number">{{ number_format($departments) }} Teams</span>
             </div>
         </div>
     </div>
@@ -67,7 +67,7 @@
             <span class="info-box-icon bg-warning text-white"><i class="fas fa-user-shield"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text">Administrators</span>
-                <span class="info-box-number">2 Accounts</span>
+                <span class="info-box-number">{{ number_format($adminUsers) }} Accounts</span>
             </div>
         </div>
     </div>
@@ -75,8 +75,8 @@
         <div class="info-box shadow-sm">
             <span class="info-box-icon bg-danger"><i class="fas fa-user-slash"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text">Suspended</span>
-                <span class="info-box-number">0 Accounts</span>
+                <span class="info-box-text">Risk Analysts</span>
+                <span class="info-box-number">{{ number_format($analystUsers) }} Accounts</span>
             </div>
         </div>
     </div>
@@ -89,14 +89,16 @@
             <h3 class="card-title text-dark font-weight-bold mb-0">
                 <i class="fas fa-list mr-1 text-secondary"></i> System Operators List
             </h3>
-            <div class="card-tools">
-                <div class="input-group input-group-sm" style="width: 200px;">
-                    <input type="text" name="table_search" class="form-control float-right" placeholder="Search user...">
+            <form class="card-tools d-flex" method="GET">
+                <div class="input-group input-group-sm" style="width: 260px;">
+                    <input type="search" name="search" value="{{ $search }}" class="form-control float-right" placeholder="Search name, email, department" autocomplete="off">
                     <div class="input-group-append">
-                        <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
                     </div>
                 </div>
-            </div>
+                <select class="form-control form-control-sm ml-2" name="role" onchange="this.form.submit()"><option value="">All roles</option>@foreach(['Admin','Analyst','Operator','Viewer'] as $option)<option value="{{ $option }}" @selected($roleFilter===$option)>{{ $option }}</option>@endforeach</select>
+                @if($search||$roleFilter)<a class="btn btn-default btn-sm ml-2" href="{{ route('admin.users.index') }}"><i class="fas fa-times"></i></a>@endif
+            </form>
         </div>
     </div>
     <div class="card-body p-0">
@@ -137,9 +139,9 @@
             @endif
         </td>
         <td class="align-middle font-weight-500 text-secondary">{{ $user->department ?? '-' }}</td>
-        <td class="align-middle text-muted" style="font-size: 13px;">{{ $user->created_at->diffForHumans() }}</td>
+        <td class="align-middle text-muted" style="font-size: 13px;">{{ $user->last_login_at?->diffForHumans() ?? 'Never signed in' }}</td>
         <td class="align-middle">
-            <span class="badge badge-success"><i class="fas fa-dot-circle mr-1"></i> Active</span>
+            <span class="badge {{ $user->status === 'Active' ? 'badge-success' : 'badge-secondary' }}"><i class="fas fa-dot-circle mr-1"></i> {{ $user->status }}</span>
         </td>
         <td class="text-center align-middle">
             <div class="btn-group">
@@ -196,6 +198,7 @@
                                 <select name="role" id="role" class="form-control" required>
                                     <option value="Admin">Super Administrator</option>
                                     <option value="Analyst">Risk Analyst</option>
+                                    <option value="Operator">Operations Operator</option>
                                     <option value="Viewer">Logistics Viewer</option>
                                 </select>
                             </div>
@@ -211,6 +214,10 @@
                         <label for="password" class="font-weight-bold">Password</label>
                         <input type="password" name="password" id="password" class="form-control" placeholder="Minimum 8 characters" required>
                     </div>
+                    <div class="form-group">
+                        <label for="status" class="font-weight-bold">Account Status</label>
+                        <select name="status" id="status" class="form-control" required><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+                    </div>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary font-weight-bold" data-bs-dismiss="modal">Cancel</button>
@@ -223,7 +230,7 @@
 @foreach($users as $user)
 <div class="modal fade" id="editUser{{ $user->id }}" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><form class="modal-content" method="POST" action="{{ route('admin.users.update',$user) }}">@csrf @method('PUT')
 <div class="modal-header"><h5 class="modal-title">Edit {{ $user->name }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-<div class="modal-body"><div class="form-group"><label>Name</label><input class="form-control" name="name" value="{{ $user->name }}" required></div><div class="form-group"><label>Email</label><input class="form-control" type="email" name="email" value="{{ $user->email }}" required></div><div class="row"><div class="col-md-6 form-group"><label>Role</label><select class="form-control" name="role">@foreach(['Admin','Analyst','Operator','Viewer'] as $role)<option @selected($user->role===$role)>{{ $role }}</option>@endforeach</select></div><div class="col-md-6 form-group"><label>Department</label><input class="form-control" name="department" value="{{ $user->department }}" required></div></div><div class="form-group"><label>New password (optional)</label><input class="form-control" type="password" name="password" minlength="8"></div></div>
+<div class="modal-body"><div class="form-group"><label>Name</label><input class="form-control" name="name" value="{{ $user->name }}" required></div><div class="form-group"><label>Email</label><input class="form-control" type="email" name="email" value="{{ $user->email }}" required></div><div class="row"><div class="col-md-6 form-group"><label>Role</label><select class="form-control" name="role">@foreach(['Admin','Analyst','Operator','Viewer'] as $role)<option @selected($user->role===$role)>{{ $role }}</option>@endforeach</select></div><div class="col-md-6 form-group"><label>Department</label><input class="form-control" name="department" value="{{ $user->department }}" required></div></div><div class="form-group"><label>Account status</label><select class="form-control" name="status"><option @selected($user->status==='Active')>Active</option><option @selected($user->status==='Inactive')>Inactive</option></select></div><div class="form-group"><label>New password (optional)</label><input class="form-control" type="password" name="password" minlength="8"></div></div>
 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save Changes</button></div></form></div></div>
 @endforeach
 @stop

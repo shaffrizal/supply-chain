@@ -10,13 +10,29 @@ class ArticleController extends Controller
     /**
      * Menampilkan daftar artikel intelligence briefs.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Mengambil semua data artikel dari database
-        $articles = Article::latest()->get();
+        $search = trim((string) $request->input('search'));
+        $category = trim((string) $request->input('category'));
+        $articles = Article::query()
+            ->when($search, fn ($query) => $query->where(function ($nested) use ($search) {
+                $nested->where('title', 'like', "%{$search}%")
+                    ->orWhere('content', 'like', "%{$search}%")
+                    ->orWhere('author', 'like', "%{$search}%");
+            }))
+            ->when($category, fn ($query) => $query->where('category', $category))
+            ->latest()
+            ->get();
 
-        // Melempar variabel $articles ke dalam view admin
-        return view('admin.articles.index', compact('articles'));
+        return view('admin.articles.index', [
+            'articles' => $articles,
+            'search' => $search,
+            'categoryFilter' => $category,
+            'totalArticles' => Article::count(),
+            'categories' => Article::whereNotNull('category')->distinct()->orderBy('category')->pluck('category'),
+            'authors' => Article::whereNotNull('author')->distinct()->count('author'),
+            'latestArticleAt' => Article::max('updated_at'),
+        ]);
     }
 
     /**

@@ -8,9 +8,11 @@ use App\Http\Controllers\CountryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExchangeRateController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PortController;
 use App\Http\Controllers\RiskScoreController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShippingRouteController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WatchlistController;
@@ -23,6 +25,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
 });
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
+Route::post('/language/{locale}', [LanguageController::class, 'update'])->name('language.update');
 
 /*
 |--------------------------------------------------------------------------
@@ -116,6 +119,9 @@ Route::get('/news', [NewsController::class, 'index'])
 
 Route::get('/risk-score', [RiskScoreController::class, 'index'])
     ->name('risk.index');
+Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+Route::get('/reports/print/{type}', [ReportController::class, 'print'])->name('reports.print');
+Route::get('/reports/export/{type}', [ReportController::class, 'export'])->name('reports.export');
 
 /*
 |--------------------------------------------------------------------------

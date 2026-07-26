@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Paginator::useBootstrapFour();
+        Paginator::useBootstrapFive();
         Gate::define('admin', fn (User $user) => $user->role === 'Admin');
     }
 }

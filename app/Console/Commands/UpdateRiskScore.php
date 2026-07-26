@@ -7,8 +7,8 @@ use App\Models\NewsCache;
 use App\Models\RiskScore;
 use App\Services\RiskScoreService;
 use App\Services\WeatherService;
+use App\Services\CountryNewsRiskService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 
 class UpdateRiskScore extends Command
 {
@@ -18,6 +18,7 @@ class UpdateRiskScore extends Command
     public function __construct(
         private readonly RiskScoreService $riskService,
         private readonly WeatherService $weatherService,
+        private readonly CountryNewsRiskService $countryNewsRisk,
     ) {
         parent::__construct();
     }
@@ -33,16 +34,17 @@ class UpdateRiskScore extends Command
         $exchangeRates = $this->exchangeRates();
         $weatherByCountry = collect($this->weatherService->globalConditions($countries))
             ->keyBy(fn (array $point) => strtoupper($point['code']));
-        $sentiments = NewsCache::selectRaw('sentiment, COUNT(*) AS total')->groupBy('sentiment')->pluck('total', 'sentiment');
-        $newsSentiment = ($sentiments['Negative'] ?? 0) > ($sentiments['Positive'] ?? 0)
-            ? 'negative'
-            : (($sentiments['Positive'] ?? 0) > ($sentiments['Negative'] ?? 0) ? 'positive' : 'neutral');
+        $articles = NewsCache::query()
+            ->where('published_at', '>=', now()->subDays(30))
+            ->latest('published_at')
+            ->get(['keyword', 'title', 'description']);
 
         $bar = $this->output->createProgressBar($countries->count());
         foreach ($countries as $country) {
-            $inflation = $this->latestWorldBankValue($country->country_code, 'FP.CPI.TOTL.ZG')
-                ?? $country->inflation_rate
-                ?? 0;
+            $countryNews = $this->countryNewsRisk->analyze($country, $articles);
+            // World Bank values are refreshed in one batch by worldbank:sync.
+            // Reusing the persisted value avoids up to 250 provider requests here.
+            $inflation = $country->inflation_rate ?? 0;
             $weather = $weatherByCountry->get(strtoupper($country->country_code), []);
             $weatherRisk = ($weather['storm'] ?? false)
                 ? 90
@@ -57,7 +59,7 @@ class UpdateRiskScore extends Command
                 'weather_risk' => $weatherRisk,
                 'inflation' => $inflation,
                 'currency_risk' => $currencyRisk,
-                'news_sentiment' => $newsSentiment,
+                'news_sentiment' => $countryNews['sentiment'],
             ]);
 
             $country->update([
@@ -102,19 +104,4 @@ class UpdateRiskScore extends Command
         }
     }
 
-    private function latestWorldBankValue(string $countryCode, string $indicator): ?float
-    {
-        try {
-            $response = Http::connectTimeout(3)->timeout(6)->get(
-                "https://api.worldbank.org/v2/country/{$countryCode}/indicator/{$indicator}",
-                ['format' => 'json', 'per_page' => 10]
-            );
-            foreach (($response->json()[1] ?? []) as $row) {
-                if (($row['value'] ?? null) !== null) return (float) $row['value'];
-            }
-        } catch (\Throwable) {
-        }
-
-        return null;
-    }
 }

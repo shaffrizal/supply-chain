@@ -41,6 +41,7 @@ class RiskScoreController extends Controller
                 'news' => round((float) ($latest?->news_risk ?? 50), 1),
                 'currency' => round((float) ($latest?->currency_risk ?? $score * .55), 1),
                 'updated_at' => $latest?->created_at ?? $country->updated_at,
+                'is_estimated' => $latest === null,
             ];
         });
 

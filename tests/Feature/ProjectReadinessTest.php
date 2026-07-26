@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Watchlist;
 use App\Services\RiskScoreService;
 use App\Services\SentimentAnalysisService;
+use App\Services\CountryNewsRiskService;
 use App\Services\TrendDataService;
 use App\Services\WeatherService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -359,6 +360,33 @@ class ProjectReadinessTest extends TestCase
         $this->assertSame(['weather' => 30.0, 'inflation' => 20.0, 'news' => 100, 'currency' => 10.0], $result['components']);
     }
 
+    public function test_report_center_and_printable_operational_reports_are_available(): void
+    {
+        Country::create([
+            'country_name' => 'Indonesia',
+            'country_code' => 'ID',
+            'region' => 'Asia',
+            'risk_index' => 75,
+            'risk_level' => 'High',
+        ]);
+
+        $this->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('Intelligence Report Center')
+            ->assertSee('Global Risk Report');
+
+        foreach (['executive', 'risk', 'economy', 'ports', 'news', 'watchlist'] as $type) {
+            $this->get(route('reports.print', $type))
+                ->assertOk()
+                ->assertSee('Print / Save as PDF');
+        }
+
+        $this->get(route('reports.print', 'users'))->assertForbidden();
+        $this->actingAs($this->admin());
+        $this->get(route('reports.print', 'users'))->assertOk()->assertSee('Identity & Access Report');
+        $this->get(route('reports.print', 'articles'))->assertOk()->assertSee('Intelligence Brief Report');
+    }
+
     public function test_lexicon_sentiment_analysis_counts_words_and_classifies_text(): void
     {
         $result = app(SentimentAnalysisService::class)->analyze('Growth improved, but war caused delay and disruption.');
@@ -366,6 +394,29 @@ class ProjectReadinessTest extends TestCase
         $this->assertSame(2, $result['positive_score']);
         $this->assertSame(3, $result['negative_score']);
         $this->assertSame('Negative', $result['sentiment']);
+    }
+
+    public function test_lexicon_sentiment_counts_every_repeated_occurrence(): void
+    {
+        $result = app(SentimentAnalysisService::class)->analyze('war war war growth');
+
+        $this->assertSame(1, $result['positive_score']);
+        $this->assertSame(3, $result['negative_score']);
+        $this->assertSame('Negative', $result['sentiment']);
+    }
+
+    public function test_country_news_risk_only_uses_articles_that_mention_the_country(): void
+    {
+        $indonesia = Country::create(['country_name' => 'Indonesia', 'country_code' => 'ID']);
+        $articles = collect([
+            new NewsCache(['keyword' => 'Indonesia', 'title' => 'Indonesia growth remains stable', 'description' => 'Strong recovery']),
+            new NewsCache(['keyword' => 'Germany', 'title' => 'Germany war disruption', 'description' => 'Crisis and delay']),
+        ]);
+
+        $result = app(CountryNewsRiskService::class)->analyze($indonesia, $articles);
+
+        $this->assertSame(1, $result['article_count']);
+        $this->assertSame('Positive', $result['sentiment']);
     }
 
     public function test_watchlist_supports_ajax_and_enforces_session_ownership(): void
@@ -417,7 +468,11 @@ class ProjectReadinessTest extends TestCase
             $this->get($uri)->assertOk()->assertDontSee('leaflet.js', false);
         }
 
-        $this->get('/map')->assertOk()->assertSee('leaflet.js', false)->assertSee('id="unifiedMap"', false);
+        $this->get('/map')->assertOk()
+            ->assertSee('leaflet.js', false)
+            ->assertSee('id="unifiedMap"', false)
+            ->assertSee('country-flag-marker', false)
+            ->assertSee('country-popup-flag', false);
         $this->get('/weather')->assertOk()
             ->assertDontSee('leaflet.js', false)
             ->assertDontSee('id="globalWeatherMap"', false);
@@ -463,6 +518,82 @@ class ProjectReadinessTest extends TestCase
         $this->post(route('login.store'), ['email' => 'admin@test.local', 'password' => 'secret-password'])
             ->assertRedirect(route('admin.users.index'));
         $this->assertAuthenticated();
+    }
+
+    public function test_non_admin_user_can_login_but_cannot_access_admin_routes(): void
+    {
+        User::create([
+            'name' => 'Supply Chain Analyst',
+            'email' => 'analyst@test.local',
+            'password' => 'secret-password',
+            'role' => 'Analyst',
+        ]);
+
+        $this->post(route('login.store'), [
+            'email' => 'analyst@test.local',
+            'password' => 'secret-password',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticated();
+        $this->get(route('dashboard'))->assertOk();
+        $this->get(route('admin.users.index'))->assertForbidden();
+    }
+
+    public function test_inactive_user_cannot_login_and_successful_login_is_tracked(): void
+    {
+        $inactive = User::create([
+            'name' => 'Inactive User', 'email' => 'inactive@test.local',
+            'password' => 'secret-password', 'role' => 'Viewer', 'status' => 'Inactive',
+        ]);
+        $this->post(route('login.store'), ['email' => $inactive->email, 'password' => 'secret-password'])
+            ->assertSessionHasErrors('email');
+        $this->assertGuest();
+
+        $active = User::create([
+            'name' => 'Active User', 'email' => 'active@test.local',
+            'password' => 'secret-password', 'role' => 'Viewer', 'status' => 'Active',
+        ]);
+        $this->post(route('login.store'), ['email' => $active->email, 'password' => 'secret-password'])
+            ->assertRedirect(route('dashboard'));
+        $this->assertNotNull($active->fresh()->last_login_at);
+    }
+
+    public function test_report_csv_export_is_available_and_restricted_reports_require_admin(): void
+    {
+        $this->get(route('reports.export', 'risk'))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+        $this->get(route('reports.export', 'users'))->assertForbidden();
+
+        $this->actingAs($this->admin());
+        $this->get(route('reports.export', 'users'))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+    }
+
+    public function test_display_language_can_be_changed_and_is_persisted_in_session(): void
+    {
+        $this->from(route('dashboard'))
+            ->post(route('language.update', 'en'))
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('locale', 'en');
+
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Countries')
+            ->assertSee('Shipping Routes')
+            ->assertSee('Language');
+
+        $this->post(route('language.update', 'ja'))
+            ->assertRedirect()
+            ->assertSessionHas('locale', 'ja')
+            ->assertCookie('googtrans');
+        $this->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('translate.google.com/translate_a/element.js', false)
+            ->assertSee('lang="ja"', false);
+
+        $this->post(route('language.update', 'unsupported'))->assertNotFound();
     }
 
     private function admin(string $email = 'admin@test.local'): User

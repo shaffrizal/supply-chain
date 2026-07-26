@@ -68,7 +68,7 @@
         <div class="risk-table-toolbar">
             <div><span class="sc-eyebrow">COUNTRY DIRECTORY</span><h2>Risk assessment</h2><p>{{ $countries->total() }} hasil ditemukan</p></div>
             <form method="GET" action="{{ route('risk.index') }}" class="risk-filter-form">
-                <div class="risk-search"><i class="fas fa-search"></i><input type="search" name="search" value="{{ $search }}" placeholder="Cari negara, kode, atau region"></div>
+                <div class="risk-search"><i class="fas fa-search"></i><input type="search" name="search" value="{{ $search }}" placeholder="Cari negara, kode, atau region" autocomplete="off" data-lpignore="true"></div>
                 <select name="level" onchange="this.form.submit()" aria-label="Filter level risiko">
                     <option value="">Semua level</option>
                     @foreach(['High'=>'High risk','Medium'=>'Medium risk','Low'=>'Low risk'] as $value=>$label)<option value="{{ $value }}" @selected($level===$value)>{{ $label }}</option>@endforeach
@@ -87,7 +87,7 @@
                         <td><div class="country-cell"><img src="https://flagcdn.com/w40/{{ strtolower($row['country']->country_code) }}.png" alt=""><div><strong>{{ $row['country']->country_name }}</strong><small>{{ $row['country']->country_code }}</small></div></div></td>
                         <td><span class="region-label">{{ $row['country']->region ?: 'Global' }}</span></td>
                         <td><div class="score-cell"><strong>{{ number_format($row['score'],1) }}</strong><span><i class="{{ $tone }}" style="width:{{ min(100,$row['score']) }}%"></i></span></div></td>
-                        <td><div class="driver-list"><span title="Weather"><i class="fas fa-cloud-sun"></i>{{ number_format($row['weather']) }}</span><span title="Inflation"><i class="fas fa-percentage"></i>{{ number_format($row['inflation']) }}</span><span title="News"><i class="far fa-newspaper"></i>{{ number_format($row['news']) }}</span><span title="Currency"><i class="fas fa-dollar-sign"></i>{{ number_format($row['currency']) }}</span></div></td>
+                        <td><div class="driver-list"><span title="Weather"><i class="fas fa-cloud-sun"></i>{{ number_format($row['weather']) }}</span><span title="Inflation"><i class="fas fa-percentage"></i>{{ number_format($row['inflation']) }}</span><span title="News"><i class="far fa-newspaper"></i>{{ number_format($row['news']) }}</span><span title="Currency"><i class="fas fa-dollar-sign"></i>{{ number_format($row['currency']) }}</span>@if($row['is_estimated'])<em class="estimate-badge" title="Belum ada snapshot risk:update">Estimasi</em>@else<em class="observed-badge" title="Berasal dari snapshot indikator">Terukur</em>@endif</div></td>
                         <td><span class="risk-status {{ $tone }}"><i></i>{{ $row['level'] }}</span></td>
                         <td><span class="updated-cell">{{ $row['updated_at'] ? $row['updated_at']->diffForHumans() : '—' }}</span></td>
                     </tr>
@@ -97,7 +97,7 @@
                 </tbody>
             </table>
         </div>
-        @if($countries->hasPages())<div class="risk-pagination">{{ $countries->links('pagination::bootstrap-4') }}</div>@endif
+        @if($countries->hasPages())<div class="risk-pagination">{{ $countries->links('pagination::bootstrap-5') }}</div>@endif
     </section>
 </div>
 @stop
@@ -109,12 +109,18 @@
 @media(max-width:1199px){.risk-kpis{grid-template-columns:repeat(2,1fr)}}@media(max-width:767px){.risk-update{display:none}.risk-kpis{grid-template-columns:1fr 1fr}.risk-table-toolbar{align-items:flex-start;flex-direction:column;gap:14px}.risk-filter-form{width:100%;flex-wrap:wrap}.risk-search{width:100%}.risk-filter-form select{flex:1}.top-risk-item{grid-template-columns:22px 28px 1fr 34px 58px}.risk-progress{display:none}.risk-table{min-width:870px}}@media(max-width:480px){.risk-kpis{grid-template-columns:1fr}}
 .risk-trend-panel{margin-bottom:20px;padding:20px}.risk-trend-panel .risk-panel-head p{margin:4px 0 0;color:#94a3b8;font-size:9px}.risk-trend-chart{height:245px}.risk-trend-filter{display:flex;align-items:center;gap:8px}.risk-trend-filter label{margin:0;color:#94a3b8;font-size:9px}.risk-trend-filter select{height:36px;min-width:190px;border:1px solid #dce5ef;border-radius:9px;background:#fff;padding:0 10px;color:#53647a;font-size:10px}.risk-trend-empty{display:flex;align-items:center;justify-content:center;flex-direction:column;height:100%;border:1px dashed #dce5ef;border-radius:12px;background:#fafcff;color:#94a3b8}.risk-trend-empty i{margin-bottom:8px;color:#9bbcef;font-size:25px}.risk-trend-empty strong{color:#53647a;font-size:11px}.risk-trend-empty span{margin-top:4px;font-size:9px}.risk-trend-empty code{color:#1677ff}@media(max-width:767px){.risk-trend-panel .risk-panel-head{gap:12px;flex-direction:column}.risk-trend-filter{width:100%}.risk-trend-filter select{flex:1}}
 </style>
+<style>
+.driver-list{align-items:center;flex-wrap:wrap}
+.driver-list em{padding:4px 7px;border-radius:999px;font-size:8px;font-style:normal;font-weight:800}
+.driver-list .estimate-badge{color:#9a6700;background:#fff4ce}
+.driver-list .observed-badge{color:#16804b;background:#e8f8ef}
+</style>
 @stop
 
 @section('js')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 const riskCanvas=document.getElementById('riskDistributionChart');if(riskCanvas&&window.Chart){new Chart(riskCanvas,{type:'doughnut',data:{labels:['Low','Medium','High'],datasets:[{data:@json([$riskCounts['Low'],$riskCounts['Medium'],$riskCounts['High']]),backgroundColor:['#22c55e','#f59e0b','#ef4444'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{displayColors:false}}}})}
-const riskTrend=@json($riskTrend),riskTrendCanvas=document.getElementById('riskTrendChart');if(riskTrendCanvas&&riskTrend.length>0){new Chart(riskTrendCanvas,{type:'line',data:{labels:riskTrend.map(p=>p.date),datasets:[{data:riskTrend.map(p=>p.value),borderColor:'#7957df',backgroundColor:'rgba(121,87,223,.10)',borderWidth:2.3,fill:true,tension:.28,pointRadius:riskTrend.length===1?5:2,pointHoverRadius:5,pointBackgroundColor:'#fff',pointBorderColor:'#7957df',pointBorderWidth:2}]},options:{maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>'Risk score: '+Number(c.raw).toFixed(1),afterLabel:c=>'Snapshots: '+riskTrend[c.dataIndex].samples}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:9,callback:(v,i)=>riskTrend[i].date.slice(5)}},y:{suggestedMin:0,suggestedMax:100,position:'right',grid:{color:'#edf1f6'},ticks:{font:{size:8},callback:v=>v+'/100'}}}}})}
+const riskTrend=@json($riskTrend),riskTrendCanvas=document.getElementById('riskTrendChart');if(riskTrendCanvas&&riskTrend.length>0){new Chart(riskTrendCanvas,{type:'line',data:{labels:riskTrend.map(p=>p.date),datasets:[{data:riskTrend.map(p=>p.value),borderColor:'#9979ff',backgroundColor:'rgba(153,121,255,.12)',borderWidth:2.3,fill:true,tension:.28,pointRadius:riskTrend.length===1?5:2,pointHoverRadius:5,pointBackgroundColor:'#081827',pointBorderColor:'#9979ff',pointBorderWidth:2}]},options:{maintainAspectRatio:false,interaction:{intersect:false,mode:'index'},plugins:{legend:{display:false},tooltip:{displayColors:false,backgroundColor:'#071827',borderColor:'#294f6c',borderWidth:1,titleColor:'#7e9bb4',bodyColor:'#e8f2fa',callbacks:{label:c=>'Risk score: '+Number(c.raw).toFixed(1),afterLabel:c=>'Snapshots: '+riskTrend[c.dataIndex].samples}}},scales:{x:{border:{display:false},grid:{display:false},ticks:{color:'#5e7b94',font:{size:9},maxTicksLimit:9,callback:(v,i)=>riskTrend[i].date.slice(5)}},y:{suggestedMin:0,suggestedMax:100,position:'right',border:{display:false},grid:{color:'rgba(95,130,158,.16)'},ticks:{color:'#5e7b94',font:{size:8},callback:v=>v+'/100'}}}}})}
 </script>
 @stop

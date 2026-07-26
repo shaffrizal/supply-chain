@@ -60,7 +60,7 @@
             </tbody>
         </table>
     </div>
-    <div class="directory-footer"><span>Showing {{ $countries->firstItem() ?? 0 }}–{{ $countries->lastItem() ?? 0 }} of {{ number_format($countries->total()) }} countries</span>{{ $countries->links('pagination::bootstrap-4') }}</div>
+    <div class="directory-footer"><span>Showing {{ $countries->firstItem() ?? 0 }}–{{ $countries->lastItem() ?? 0 }} of {{ number_format($countries->total()) }} countries</span>{{ $countries->links('pagination::bootstrap-5') }}</div>
 </section>
 @stop
 

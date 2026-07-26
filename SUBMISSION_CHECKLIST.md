@@ -17,11 +17,19 @@ Framework: Laravel 12 / PHP 8.2
 - [x] Dashboard and realtime overview return HTTP 200.
 - [x] External providers use timeouts, cache, and safe fallbacks.
 - [x] Admin mutations require authentication and the Admin role.
-- [x] GNews is the primary news provider, with an optional NewsAPI fallback.
+- [x] NewsAPI is the specification-aligned primary provider, with an optional GNews fallback.
+- [x] Country risk snapshots use news mentioning the relevant country rather than one global sentiment.
+- [x] Seeded placeholder risk values are visibly distinguished until `risk:update` creates measured snapshots.
 - [x] Country languages, inflation, exports, and imports are represented and displayed.
 - [x] Country Comparison includes inflation, weather, currency, exports, and imports.
 - [x] Admin User and Article modules support create, read, update, and delete.
 - [x] Scheduled risk weather data uses Open-Meteo.
+- [x] Risk update reuses synchronized World Bank data instead of issuing one inflation request per country.
+- [x] Public API endpoints are protected by a 60-request-per-minute rate limit.
+- [x] User account status and actual last-login timestamps are persisted.
+- [x] Report Center supports browser PDF printing and Excel-compatible CSV export.
+- [x] Service directory casing complies with PSR-4 for Linux deployment.
+- [x] Unused server-side PDF dependency has been removed.
 - [x] The 12,000-facility dataset is documented as source ports plus simulated terminal/facility records.
 
 ## Before presenting or deploying

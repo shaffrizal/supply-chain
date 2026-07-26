@@ -34,7 +34,7 @@
             <span class="info-box-icon bg-primary shadow-sm"><i class="fas fa-file-alt"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-muted font-weight-bold">Total Briefs</span>
-                <span class="info-box-number text-dark h4 mb-0">{{ $articles->count() ?? 0 }} Reports</span>
+                <span class="info-box-number text-dark h4 mb-0">{{ number_format($totalArticles) }} Reports</span>
             </div>
         </div>
     </div>
@@ -42,8 +42,8 @@
         <div class="info-box shadow-sm border-0">
             <span class="info-box-icon bg-success shadow-sm"><i class="fas fa-eye"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text text-muted font-weight-bold">Total Coverage</span>
-                <span class="info-box-number text-dark h4 mb-0">Global Audience</span>
+                <span class="info-box-text text-muted font-weight-bold">Categories</span>
+                <span class="info-box-number text-dark h4 mb-0">{{ number_format($categories->count()) }} Topics</span>
             </div>
         </div>
     </div>
@@ -51,8 +51,8 @@
         <div class="info-box shadow-sm border-0">
             <span class="info-box-icon bg-warning shadow-sm"><i class="fas fa-exclamation-triangle text-white"></i></span>
             <div class="info-box-content">
-                <span class="info-box-text text-muted font-weight-bold">Active Alerts</span>
-                <span class="info-box-number text-dark h4 mb-0">High Priority</span>
+                <span class="info-box-text text-muted font-weight-bold">Contributors</span>
+                <span class="info-box-number text-dark h4 mb-0">{{ number_format($authors) }} Authors</span>
             </div>
         </div>
     </div>
@@ -61,7 +61,7 @@
             <span class="info-box-icon bg-info shadow-sm"><i class="fas fa-clock"></i></span>
             <div class="info-box-content">
                 <span class="info-box-text text-muted font-weight-bold">Last Updated</span>
-                <span class="info-box-number text-dark font-weight-normal text-sm mb-0">Just Now</span>
+                <span class="info-box-number text-dark font-weight-normal text-sm mb-0">{{ $latestArticleAt ? \Illuminate\Support\Carbon::parse($latestArticleAt)->diffForHumans() : 'No activity' }}</span>
             </div>
         </div>
     </div>
@@ -74,14 +74,16 @@
             <h3 class="card-title text-dark font-weight-bold mb-0">
                 <i class="fas fa-stream mr-1 text-secondary"></i> Intelligence Bulletin Board
             </h3>
-            <div class="card-tools">
-                <div class="input-group input-group-sm" style="width: 250px;">
-                    <input type="text" name="table_search" class="form-control float-right border-light" placeholder="Search operational reports...">
+            <form class="card-tools d-flex" method="GET">
+                <div class="input-group input-group-sm" style="width: 270px;">
+                    <input type="search" name="search" value="{{ $search }}" class="form-control float-right border-light" placeholder="Search title, content, author" autocomplete="off">
                     <div class="input-group-append">
-                        <button type="submit" class="btn btn-default border-light bg-light"><i class="fas fa-search"></i></button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
                     </div>
                 </div>
-            </div>
+                <select class="form-control form-control-sm ml-2" name="category" onchange="this.form.submit()"><option value="">All categories</option>@foreach($categories as $option)<option value="{{ $option }}" @selected($categoryFilter===$option)>{{ $option }}</option>@endforeach</select>
+                @if($search||$categoryFilter)<a class="btn btn-default btn-sm ml-2" href="{{ route('admin.articles.index') }}"><i class="fas fa-times"></i></a>@endif
+            </form>
         </div>
     </div>
     <div class="card-body p-0">

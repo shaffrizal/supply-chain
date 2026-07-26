@@ -23,7 +23,7 @@
                 <input type="hidden" name="topic" value="{{ $topic }}">
                 <div class="news-search-box">
                     <i class="fas fa-search"></i>
-                    <input type="search" name="search" value="{{ $search }}"
+                    <input type="search" name="search" value="{{ $search }}" autocomplete="off" data-lpignore="true"
                         placeholder="Cari isu, perusahaan, negara, atau komoditas..." aria-label="Cari berita">
                     @if ($search)
                         <a href="{{ route('news.index', ['topic' => $topic]) }}" class="news-clear" title="Hapus pencarian">

@@ -15,3 +15,10 @@ Schedule::command('risk:update')
     ->withoutOverlapping(180)
     ->onOneServer()
     ->evenInMaintenanceMode();
+
+Schedule::command('worldbank:sync')
+    ->name('world-bank-daily-indicators')
+    ->dailyAt('02:00')
+    ->timezone(config('app.timezone'))
+    ->withoutOverlapping(180)
+    ->onOneServer();
