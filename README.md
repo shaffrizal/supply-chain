@@ -1,44 +1,118 @@
 # Supply Chain Intelligence
 
-Platform analisis risiko rantai pasok global berbasis Laravel 12. Aplikasi menggabungkan profil negara, pelabuhan, cuaca, ekonomi, kurs, berita, dan risk score dalam satu dashboard dark intelligence yang responsif.
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)](https://www.php.net)
+[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap&logoColor=white)](https://getbootstrap.com)
+[![Deployment](https://img.shields.io/badge/Deployment-Railway-0B0D0E?logo=railway&logoColor=white)](https://railway.com)
 
-## Fitur utama
+Platform intelijen risiko rantai pasok global yang menyatukan profil negara, jaringan pelabuhan, cuaca, indikator ekonomi, kurs, berita, dan skor risiko dalam satu dashboard responsif.
 
-- Dashboard eksekutif dengan indikator risiko, cuaca, kurs, berita, dan jaringan pelabuhan.
-- Direktori 250 negara lengkap dengan CRUD, filter, profil, favorit, dan perbandingan.
-- Direktori 12.000 pelabuhan dengan CRUD, pencarian, status operasional, kapasitas, dan risiko.
-- Satu peta global terpadu untuk negara dan pelabuhan dengan layer, filter risiko, pencarian, clustering, popup, dan fullscreen.
-- Direktori cuaca 250 negara dengan pencarian, bendera, kondisi aktual, dan fallback aman.
-- Peta cuaca global terpisah dengan radar hujan RainViewer, layer observasi, badai, angin kencang, filter negara, popup, dan fullscreen.
-- Indikator dan tren ekonomi World Bank untuk seluruh negara pada dataset, disimpan dalam cache.
-- Exchange Rate API dengan pilihan mata uang dasar dan fallback ketika layanan tidak tersedia.
-- News intelligence, cache berita, dan analisis sentimen.
-- Risk score serta klasifikasi Low, Medium, dan High.
-- Watchlist, shipping routes, REST API internal, dan panel administrasi.
-- Report Center dengan print-to-PDF browser dan ekspor CSV kompatibel Excel.
-- Manajemen status akun serta pencatatan waktu login terakhir.
-- Rate limiting API publik sebanyak 60 request per menit per client.
-- Pemilih bahasa berbasis session: Indonesia/English diterjemahkan secara native,
-  ditambah bahasa global utama melalui penerjemahan antarmuka otomatis.
+**Demo:** [supply-chain-production-6560.up.railway.app](https://supply-chain-production-6560.up.railway.app)
+
+> Aplikasi mewajibkan autentikasi. Pengunjung dapat membuat akun pengguna melalui halaman registrasi. Akun administrator dibuat menggunakan environment variable dan tidak dipublikasikan di repository.
+
+## Daftar Isi
+
+- [Fitur Utama](#fitur-utama)
+- [Hak Akses](#hak-akses)
+- [Teknologi](#teknologi)
+- [Arsitektur](#arsitektur)
+- [Instalasi Lokal](#instalasi-lokal)
+- [Konfigurasi Environment](#konfigurasi-environment)
+- [Dataset dan Sinkronisasi](#dataset-dan-sinkronisasi)
+- [Deployment Railway](#deployment-railway)
+- [Pengujian](#pengujian)
+- [Keamanan](#keamanan)
+- [Pengembang](#pengembang)
+
+## Fitur Utama
+
+- Dashboard eksekutif dengan ringkasan risiko, cuaca, kurs, berita, negara, pelabuhan, dan rute pengiriman.
+- Direktori 250 negara dengan pencarian, filter, profil, watchlist, dan perbandingan.
+- Direktori 12.000 fasilitas pelabuhan dengan status operasional, kapasitas, lokasi, dan tingkat risiko.
+- Peta global berbasis Leaflet dengan marker clustering, layer negara/pelabuhan, filter risiko, popup, dan mode layar penuh.
+- Direktori dan peta cuaca global dengan OpenWeatherMap, Open-Meteo, serta radar hujan RainViewer.
+- Indikator ekonomi World Bank: GDP, populasi, inflasi, pertumbuhan, perdagangan, ekspor, dan impor.
+- Informasi nilai tukar, berita global, cache berita, serta analisis sentimen.
+- Perhitungan risk score berbobot dengan klasifikasi `Low`, `Medium`, dan `High`.
+- Watchlist personal dan visualisasi jaringan rute pengiriman.
+- Report Center dengan print-to-PDF dan ekspor CSV yang kompatibel dengan Excel.
+- Panel administrasi untuk mengelola pengguna, negara, pelabuhan, dan artikel.
+- Antarmuka Indonesia/English serta dukungan penerjemahan bahasa global.
+- REST API internal dengan rate limit 60 request per menit per client.
+
+## Hak Akses
+
+| Kemampuan | User | Admin |
+|---|:---:|:---:|
+| Dashboard dan intelligence modules | Ya | Ya |
+| Profil negara, pelabuhan, cuaca, dan peta | Ya | Ya |
+| Watchlist dan laporan umum | Ya | Ya |
+| Kelola negara dan pelabuhan | Tidak | Ya |
+| Kelola pengguna dan artikel | Tidak | Ya |
+| Laporan pengguna dan artikel | Tidak | Ya |
+
+Pengguna yang belum terautentikasi akan diarahkan ke `/login`. Registrasi publik selalu membuat akun dengan role `User`; role administrator hanya dikelola melalui konfigurasi dan panel admin.
 
 ## Teknologi
 
-- PHP 8.2 dan Laravel 12
-- MySQL untuk pengembangan; SQLite in-memory untuk pengujian
-- Bootstrap 5.3, Chart.js, dan Leaflet
-- REST Countries, OpenWeatherMap untuk kondisi detail, Open-Meteo untuk batch/fallback,
-  RainViewer, World Bank, ExchangeRate API, dan NewsAPI (dengan GNews sebagai fallback opsional)
+| Lapisan | Teknologi |
+|---|---|
+| Backend | PHP 8.2+, Laravel 12 |
+| Frontend | Blade, Bootstrap 5.3, Vite |
+| Database | MySQL; SQLite in-memory untuk pengujian |
+| Visualisasi | Chart.js, Leaflet, MarkerCluster |
+| Data eksternal | REST Countries, World Bank, OpenWeatherMap, Open-Meteo, RainViewer, NewsAPI, GNews |
+| Deployment | Railway, Railpack |
 
-## Instalasi
+## Arsitektur
+
+```text
+Browser / Mobile
+       |
+Laravel Routes + Authentication + Authorization
+       |
+Controllers ---- Services / External API Providers
+       |                         |
+Eloquent Models             Cached responses
+       |
+MySQL Database
+```
+
+Struktur utama repository:
+
+```text
+app/                 controller, model, service, command, dan policy
+bootstrap/           bootstrap aplikasi Laravel
+config/              konfigurasi aplikasi dan provider
+database/            migration, seeder, factory, dan dataset
+public/              entry point serta aset publik
+resources/           Blade views, stylesheet, dan JavaScript
+routes/              web routes, API routes, dan scheduler
+railway/             initialization script untuk deployment
+tests/               automated feature tests
+```
+
+## Instalasi Lokal
+
+Prasyarat:
+
+- PHP 8.2 atau lebih baru
+- Composer
+- Node.js 20 atau lebih baru
+- MySQL 8
 
 ```bash
+git clone https://github.com/shaffrizal/supply-chain.git
+cd supply-chain
 composer install
 npm install
 copy .env.example .env
 php artisan key:generate
 ```
 
-Atur koneksi database pada `.env`, kemudian jalankan:
+Atur koneksi database pada `.env`, lalu jalankan:
 
 ```bash
 php artisan migrate --seed
@@ -47,41 +121,44 @@ npm run build
 php artisan serve
 ```
 
-Aplikasi tersedia di `http://127.0.0.1:8000`.
+Aplikasi lokal tersedia di `http://127.0.0.1:8000`.
 
-Panel admin berada di `/login`. Akun awal dari seeder menggunakan `zalhom@gmail.com` dan `zalhom123`; ubah melalui `ADMIN_EMAIL` dan `ADMIN_PASSWORD` sebelum deployment.
+## Konfigurasi Environment
 
-## Konfigurasi API
-
-Tambahkan nilai berikut ke `.env` bila tersedia:
+Konfigurasi minimum:
 
 ```env
-GNEWS_API_KEY=
-NEWS_API_KEY=
+APP_NAME="Supply Chain Intelligence"
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_URL=https://example.com
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=supply_chain
+DB_USERNAME=root
+DB_PASSWORD=
+
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=use-a-unique-strong-password
 ```
 
-API publik tetap memiliki timeout, cache, dan fallback agar halaman tidak gagal ketika jaringan lambat atau layanan eksternal tidak tersedia.
+Integrasi eksternal bersifat opsional karena aplikasi memiliki timeout, cache, dan fallback:
 
-## Bootstrap 5
+```env
+OPENWEATHER_API_KEY=
+NEWS_API_KEY=
+GNEWS_API_KEY=
+SEED_REFRESH_RISK_SCORES=false
+```
 
-Seluruh halaman utama dan administrasi menggunakan layout Bootstrap 5.3 native. AdminLTE 3 beserta dependency Bootstrap 4 telah dihapus agar tidak terjadi konflik CSS atau JavaScript. Sidebar, top navigation, modal, alert, form, tabel, pagination, serta utility responsif ditangani oleh shell aplikasi Bootstrap 5.
+Jangan menyimpan `.env`, password, maupun API key ke Git.
 
-## Akses dan keamanan data
+## Dataset dan Sinkronisasi
 
-- Direktori dan detail negara/pelabuhan dapat dibaca publik.
-- Create, update, delete, dan sinkronisasi dataset hanya tersedia untuk akun dengan role `Admin`.
-- Pengelolaan dataset pelabuhan tersedia di `/admin/ports`.
-- Watchlist mendukung tambah/hapus asynchronous melalui Axios dengan perlindungan CSRF dan pemeriksaan kepemilikan.
-
-## Dataset
-
-Seeder utama menghasilkan:
-
-- 250 profil negara
-- 12.000 fasilitas pelabuhan: 100 pelabuhan sumber utama yang diperkaya terminal/fasilitas simulasi untuk kebutuhan analisis akademik dan demonstrasi skala data. Data simulasi bukan klaim 12.000 pelabuhan dunia yang seluruhnya bersumber dari API eksternal.
-- data awal shipping routes
-
-Untuk memulihkan dataset pengembangan:
+Seeder utama menyiapkan 250 profil negara, 12.000 fasilitas pelabuhan, rute pengiriman, serta akun administrator dari environment variable.
 
 ```bash
 php artisan db:seed --force
@@ -89,79 +166,65 @@ php artisan worldbank:sync --fresh
 php artisan risk:update
 ```
 
-Nilai risiko bawaan seeder hanya data bootstrap agar antarmuka dapat digunakan secara offline.
-Jalankan `risk:update` setelah seeding untuk menggantinya dengan snapshot berbobot dari
-cuaca, inflasi, berita per negara, dan perubahan mata uang. Pada lingkungan dengan akses
-internet, proses ini dapat dijalankan otomatis dengan `SEED_REFRESH_RISK_SCORES=true`.
+Sebagian fasilitas pelabuhan diperkaya dengan data simulasi untuk demonstrasi analisis akademik skala besar; data tersebut bukan klaim bahwa seluruh 12.000 fasilitas berasal langsung dari API eksternal.
 
-`worldbank:sync` mengambil GDP, populasi, inflasi, pertumbuhan GDP, trade/GDP,
-ekspor, dan impor secara batch untuk seluruh negara. Hasilnya disimpan di database,
-respons provider di-cache enam jam, dan scheduler menyegarkannya setiap hari pukul 02.00.
-`risk:update` menggunakan indikator hasil sinkronisasi tersebut sehingga tidak mengirim
-ratusan request World Bank tambahan.
+Scheduler menggunakan zona waktu `Asia/Jakarta`:
 
-## Report Center
+- `risk:update` setiap hari pukul 01.00.
+- `worldbank:sync` setiap hari pukul 02.00.
+- Snapshot risiko disimpan satu kali per negara per hari dan dipertahankan selama 90 hari.
 
-Buka `/reports` untuk membuat Executive, Risk, Economy, Port, News, Watchlist,
-Article, atau User report. Gunakan **Generate Report** lalu print browser untuk
-menyimpan PDF, atau **Export CSV** untuk mengunduh data yang dapat dibuka di Excel.
-Report Articles dan Users hanya dapat diakses oleh Admin.
-
-## Menambahkan bahasa
-
-Bahasa yang tersedia didefinisikan di `config/locales.php`. Bahasa Indonesia dan
-English menggunakan kamus native. Bahasa lain menggunakan penerjemahan halaman
-otomatis, dengan brand, identitas akun, kode, angka, dan data teknis yang dilindungi
-dari terjemahan bila diperlukan. Untuk menambah bahasa,
-misalnya Jepang, tambahkan kode `ja` ke konfigurasi lalu buat folder `lang/ja`
-dengan struktur file kamus yang sama seperti `lang/id` dan `lang/en`. Route,
-middleware, penyimpanan session, serta selector navbar akan langsung menggunakan
-bahasa baru tanpa perubahan arsitektur.
-
-## Pengujian dan pemeriksaan
+Untuk memeriksa jadwal:
 
 ```bash
-php artisan test
-php artisan view:cache
-php artisan route:list
-```
-
-Pengujian mencakup akses halaman utama, Bootstrap 5, tren data nyata, klasifikasi layer cuaca, radar hujan, direktori dan peta cuaca, fallback Weather/World Bank/News/Currency, risk scoring, sentiment analysis, AJAX watchlist, otorisasi CRUD, validasi data, CRUD pelabuhan, dan halaman administrasi.
-
-Checklist pengumpulan dan deployment tersedia di [`SUBMISSION_CHECKLIST.md`](SUBMISSION_CHECKLIST.md).
-
-## Catatan deployment
-
-- Gunakan `APP_DEBUG=false` pada lingkungan presentasi/produksi.
-- Jangan commit file `.env` atau API key.
-- Jalankan `php artisan optimize` setelah konfigurasi produksi final.
-- Jalankan pengujian sebelum demo atau pengumpulan.
-
-### Scheduler risk trend 90 hari
-
-`risk:update` dijadwalkan setiap hari pukul 01.00 menggunakan zona waktu `Asia/Jakarta`. Kondisi cuaca scheduler berasal dari Open-Meteo. Setiap negara hanya mempunyai satu snapshot per tanggal; eksekusi ulang pada hari yang sama memperbarui snapshot tersebut dan data yang lebih tua dari 90 hari otomatis dibersihkan.
-
-Jalankan migrasi terbaru terlebih dahulu:
-
-```bash
-php artisan migrate --force
 php artisan schedule:list
 ```
 
-Untuk Windows/XAMPP, buka PowerShell sebagai Administrator lalu jalankan:
+## Deployment Railway
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/install-risk-scheduler.ps1
-```
+Repository sudah menyediakan [`railway.json`](railway.json) dan initialization script [`railway/init-app.sh`](railway/init-app.sh). Proses pre-deploy menjalankan migration produksi serta membangun cache Laravel. Health check tersedia pada `/up`.
 
-Task Scheduler akan menjalankan `php artisan schedule:run` setiap menit. Untuk Linux, tambahkan cron berikut:
+Ringkasan deployment:
 
-```cron
-* * * * * cd /path/to/supply-chain && php artisan schedule:run >> /dev/null 2>&1
-```
+1. Hubungkan repository GitHub ke Railway.
+2. Tambahkan service MySQL.
+3. Hubungkan variabel database MySQL ke service aplikasi.
+4. Isi `APP_KEY`, `APP_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, dan API key yang diperlukan.
+5. Pastikan `APP_ENV=production` dan `APP_DEBUG=false`.
+6. Deploy aplikasi, lalu jalankan `php artisan db:seed --force` satu kali melalui Railway Shell.
 
-Saat pengembangan lokal, scheduler dapat dijalankan langsung dengan:
+Setelah mengubah kredensial admin pada environment, jalankan kembali seeder agar akun diperbarui.
+
+## Pengujian
 
 ```bash
-php artisan schedule:work
+php artisan test
+php artisan route:list
+php artisan view:cache
 ```
+
+Test suite mencakup autentikasi dan registrasi, otorisasi role, CRUD admin, dashboard, data ekonomi, cuaca, berita, risk scoring, watchlist AJAX, pelabuhan, report, API fallback, serta perlindungan akses guest.
+
+Checklist pemeriksaan akhir tersedia di [`SUBMISSION_CHECKLIST.md`](SUBMISSION_CHECKLIST.md).
+
+## Keamanan
+
+- Seluruh halaman platform dilindungi autentikasi.
+- Operasi administratif dilindungi authorization gate.
+- Password disimpan menggunakan hashing Laravel.
+- Session ID diregenerasi setelah autentikasi.
+- Login dan registrasi dilindungi rate limiting.
+- Form state-changing dilindungi CSRF.
+- API publik dibatasi 60 request per menit per client.
+- Mode produksi menggunakan `APP_DEBUG=false`.
+- Secret hanya disimpan melalui environment variable Railway.
+
+Jika menemukan masalah keamanan, jangan mempublikasikan kredensial atau detail eksploitasi melalui issue publik.
+
+## Pengembang
+
+Dikembangkan oleh [shaffrizal](https://github.com/shaffrizal) sebagai platform demonstrasi dan analisis supply-chain intelligence berbasis Laravel.
+
+---
+
+Dokumentasi ini mencerminkan konfigurasi aplikasi pada branch `main`.
